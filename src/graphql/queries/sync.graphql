@@ -1,0 +1,13 @@
+mutation Sync($serial: String!, $institutionId: ID!, $doctorIds: [ID!]!, $workflowId: ID!, $deviceName: String!) {
+  createDevices(input: {
+    serial: $serial,
+    name: $deviceName,
+    institution: { connect: { where: {node: {id: $institutionId}}}}
+    doctors: { connect: { where: {node: {id_IN: $doctorIds}}}}
+    workflow: { connect: { where: {node: {id: $workflowId}}}}
+  }) {
+    devices {
+      serial
+    }
+  }
+}

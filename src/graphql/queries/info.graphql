@@ -1,0 +1,3 @@
+mutation ReceiveInfoByEmail($question: ID!, $email: String!) {
+  sendNoticeByEmail(question: $question, email: $email)
+}

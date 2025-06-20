@@ -1,0 +1,6 @@
+fragment Institution on Institution {
+  id
+  name
+  operatingMode
+  subscriptionPlan
+}

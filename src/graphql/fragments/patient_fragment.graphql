@@ -1,0 +1,8 @@
+fragment Patient on Patient {
+  id
+  firstName
+  lastName
+  birthName
+  gender
+  email
+}

@@ -1,0 +1,9 @@
+query GetAiResponse($questionIndex: Int!, $questionnaireId: ID!) {
+  aiResponse(questionIndex: $questionIndex, questionnaireId: $questionnaireId) {
+    type
+    name
+    hint
+    placeholder
+    choices
+  }
+}

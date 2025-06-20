@@ -1,0 +1,34 @@
+# import '../fragments/doctor_fragment.graphql'
+# import '../fragments/institution_fragment.graphql'
+
+query GetQuestionnaire($linkCode: String!) {
+  workflowLinks(where: { id: $linkCode }) {
+    institution {
+      ...Institution
+    }
+    doctors {
+      ...Doctor
+    }
+    workflow {
+      latest {
+        firstStepId
+      }
+    }
+  }
+}
+
+query GetQuestionnaireFromDevice($serial: String!) {
+  devices(where: { serial: $serial }) {
+    institution {
+      ...Institution
+    }
+    doctors {
+      ...Doctor
+    }
+    workflow {
+      latest {
+        firstStepId
+      }
+    }
+  }
+}

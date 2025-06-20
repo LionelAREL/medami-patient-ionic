@@ -1,0 +1,7 @@
+# import '../fragments/doctor_fragment.graphql'
+
+query GetDoctor($id: ID!) {
+  doctors(where: { id: $id }) {
+    ...Doctor
+  }
+}

@@ -1,0 +1,123 @@
+fragment QuestionItemFragment on QuestionItem {
+  label
+  medicalLabel
+}
+
+fragment Interview on Questionnaire {
+  id
+  name
+  latest {
+    firstStepId
+    isFirstStepOnCooldown
+  }
+}
+
+query GetStep($session: ID!, $id: ID!) {
+  isThirdPartySession(session: $session)
+  questionnaireSteps(where: { id: $id }) {
+    __typename
+    id
+    ... on QuestionnaireWelcomeStep {
+      text
+    }
+    ... on QuestionnaireInfoStep {
+      text
+      showReceiveByEmail
+    }
+    ... on QuestionnaireCondition {
+      hint
+      showToDoctor
+    }
+    ... on TextQuestion {
+      hint
+      field
+      placeholder
+    }
+    ... on SelectQuestion {
+      hint
+      field
+      placeholder
+      choices(options: { sort: [{ order: ASC }] }) {
+        ...QuestionItemFragment
+      }
+      multiple
+    }
+    ... on RangeQuestion {
+      hint
+      field
+      min
+      max
+    }
+    ... on CheckboxQuestion {
+      hint
+      field
+      choices(options: { sort: [{ order: ASC }] }) {
+        ...QuestionItemFragment
+      }
+    }
+    ... on RadioQuestion {
+      hint
+      field
+      choices(options: { sort: [{ order: ASC }] }) {
+        ...QuestionItemFragment
+      }
+    }
+    ... on DateQuestion {
+      hint
+      field
+      dateType
+    }
+    ... on QuestionnaireRouter {
+      routes {
+        label
+        order
+        conditions {
+          ... on ConditionGroup {
+            conditions {
+              ... on Condition {
+                var
+                comparator
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+    ... on QuestionnaireMenu {
+      name
+      choices(options: { sort: [{ order: ASC }] }) {
+        __typename
+        label
+        description
+        icon
+        iconFontFamily
+        iconFontPackage
+      }
+    }
+    ... on QuestionnaireSelectMenu {
+      field
+      placeholder
+      entries(options: { sort: [{ order: ASC }] }) {
+        questionnaires {
+          ...Interview
+        }
+        keywords
+        label
+      }
+    }
+    ... on QuestionnaireInterview {
+      questionnaire {
+        ...Interview
+      }
+    }
+    ... on QuestionnaireIdentity {
+      fields
+      withAuthentication
+    }
+    ... on QuestionnaireAi {
+      prompt
+      maxQuestions
+    }
+  }
+}

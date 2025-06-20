@@ -1,0 +1,15 @@
+mutation CreateSession($linkId: String!, $isDeviceLink: Boolean!, $doctorId: ID!) {
+  createSession(linkId: $linkId, isDeviceLink: $isDeviceLink, doctorId: $doctorId)
+}
+
+mutation Answer($session: ID!, $question: ID!, $values: [String!]!, $field: String, $order: Int!, $hint: String, $choices: [String!], $type: AiResponseType) {
+  answer(session: $session, question: $question, values: $values, field: $field, order: $order, hint: $hint, choices: $choices, type: $type)
+}
+
+mutation CompleteInterview($session: ID!) {
+  completeInterview(session: $session)
+}
+
+query ThirdPartySession($session: ID!) {
+  isThirdPartySession(session: $session)
+}

@@ -1,0 +1,11 @@
+fragment Doctor on Doctor {
+  id
+  firstName
+  lastName
+  speciality {
+    name
+  }
+  picture {
+    url
+  }
+}

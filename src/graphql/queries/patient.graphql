@@ -1,0 +1,84 @@
+mutation addPatient(
+  $session: ID!
+  $firstName: String
+  $lastName: String
+  $birthdate: Date
+  $gender: String
+  $contactEmail: String
+  $phone: String
+  $birthName: String
+  $postalCode: String
+  $city: String
+  $additionalAddressInfo: String
+) {
+  addPatient(
+    session: $session
+    firstName: $firstName
+    lastName: $lastName
+    birthdate: $birthdate
+    gender: $gender
+    contactEmail: $contactEmail
+    phone: $phone
+    birthName: $birthName
+    postalCode: $postalCode
+    city: $city
+    additionalAddressInfo: $additionalAddressInfo
+  )
+}
+
+mutation updatePatient(
+  $patient: ID!
+  $firstName: String
+  $lastName: String
+  $birthdate: Date
+  $gender: String
+) {
+  updatePatients(
+    where: {
+      id: $patient
+      firstName: $firstName
+      lastName: $lastName
+      birthdate: $birthdate
+      gender: $gender
+    }
+  ) {
+    patients {
+      id
+    }
+  }
+}
+
+mutation signInPatient($email: String!, $password: String!) {
+  signInPatient(email: $email, password: $password)
+}
+
+mutation signUpPatient($email: String!, $password: String!) {
+  signUpPatient(email: $email, password: $password)
+}
+
+mutation authPatient($token: String!) {
+  authPatient(token: $token)
+}
+
+query GetPatientSelectMenuChoice($field: String!, $patientId: ID) {
+  answers(
+    where: {
+      field: $field
+      interview: { patient: { id: $patientId } }
+      NOT: { createdAt: null }
+    }
+    options: { sort: [{ createdAt: DESC }], limit: 1 }
+  ) {
+    values
+  }
+}
+
+query GetPatientName($sessionId: ID!) {
+  patients(where: { interviews_SOME: { id: $sessionId } }) {
+    firstName
+  }
+}
+
+query isEmailAlreadyTaken {
+  isEmailAlreadyTaken
+}
