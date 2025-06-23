@@ -1,20 +1,21 @@
 import { constant } from "../../styles/constants"
 
-type NavigationButtonProps = {
-    variant?:'next' | 'previous';
+type NavigationButtonProps = React.PropsWithChildren<{
+    variant?:'primary' | 'secondary';
     isFull: boolean;
     disabled?: boolean;
     onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
-}
+}>
 
-const NavigationButton = ({variant = 'next', isFull, disabled = false, onClick}:NavigationButtonProps) => {
+const NavigationButton = ({variant = 'primary', isFull, disabled = false, onClick, children}:NavigationButtonProps) => {
 
   const commonProps: React.HTMLAttributes<HTMLDivElement> = {
     onClick: disabled ? undefined : onClick,
     style: {
       cursor: disabled ? "default" : "pointer", 
-      color: variant === 'next' ? constant.white : constant.primaryColor, 
-      backgroundColor: variant === "next" ? constant.primaryColor : constant.background, border: `${constant.primaryColor} 1px solid`,
+      color: variant === 'secondary' ? constant.primaryColor : constant.white, 
+      backgroundColor: variant === "secondary" ? constant.background : constant.primaryColor,
+      border: `${constant.primaryColor} 1px solid`,
       display: "flex", 
       alignItems: "center", 
       justifyContent: "center",
@@ -25,14 +26,14 @@ const NavigationButton = ({variant = 'next', isFull, disabled = false, onClick}:
     if(isFull) {
         return (
           <div {...commonProps} style={{ flex: 1, height: "60px", fontSize: "24px", fontStyle: "normal",textAlign: "center", fontWeight: 200, borderRadius: 0, ...commonProps.style}}>
-            {variant === 'next' ? 'Suivant' : 'Retour'}
+            {children}
           </div>
         )
-    }
-
-  return (
-    <div {...commonProps} style={{ width: '200px', height:"48px", fontSize: "24px", fontStyle: "normal",textAlign: "center", fontWeight: 200, borderRadius: "8px", ...commonProps.style}}>
-      {variant === 'next' ? 'Suivant' : 'Retour'}
+      }
+      
+      return (
+        <div {...commonProps} style={{ width: '200px', height:"48px", fontSize: "24px", fontStyle: "normal",textAlign: "center", fontWeight: 200, borderRadius: "8px", ...commonProps.style}}>
+      {children}
     </div>
   )
 }

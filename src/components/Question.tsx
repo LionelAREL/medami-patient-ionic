@@ -3,9 +3,7 @@ import { useQuestionnaireStore } from '../store';
 const Question = () => {
   const { currStep, currSubStep, child, transitionDirection } = useQuestionnaireStore();
 
-  console.log(currStep, currSubStep, child)
   if(!child && !currStep) {
-    console.log("no child")
     return null
   }
 

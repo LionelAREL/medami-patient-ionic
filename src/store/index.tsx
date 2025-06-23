@@ -1,28 +1,31 @@
 import { create } from "zustand";
 import { GetQuestionnaire } from "./../graphql/queries/questionnaire.graphql";
 import { GetInstitutionDoctors } from "./../graphql/queries/institution.graphql";
-import { CreateSession, Answer, CompleteInterview, ThirdPartySession } from "./../graphql/queries/interview.graphql";
+import { CreateSession, CompleteInterview, ThirdPartySession } from "./../graphql/queries/interview.graphql";
 import { EvaluateStep, GetNextStep } from "./../graphql/queries/next_step.graphql";
 import { GetStep } from "./../graphql/queries/step.graphql";
 import { GetDoctor } from "./../graphql/queries/doctor.graphql";
 import { authPatient } from "./../graphql/queries/patient.graphql";
 import client from "../graphql/client";
-import { AnswerMutation, AuthPatientMutation, CompleteInterviewMutation, Doctor, GetDoctorQuery, GetNextStepQuery, Institution, InterviewFragment, QuestionnaireInterview, ThirdPartySessionQuery, type CreateSessionMutation, type EvaluateStepQuery, type GetInstitutionDoctorsQuery, type GetQuestionnaireQuery, type GetStepQuery } from "../graphql/generated/graphql";
+import { AuthPatientMutation, CompleteInterviewMutation, Doctor, GetDoctorQuery, GetNextStepQuery, Institution, InterviewFragment, QuestionnaireInterview, ThirdPartySessionQuery, type CreateSessionMutation, type EvaluateStepQuery, type GetInstitutionDoctorsQuery, type GetQuestionnaireQuery, type GetStepQuery } from "../graphql/generated/graphql";
 import { jwtDecode } from "jwt-decode";
 import { getQueryParam } from "../utils/queryParams";
 import Child from "../components/Child";
+import { commonSave } from "../utils/save/save";
 
 type ClientJWTToken = {
   sid: string;
   aud: string;
 }
 
-type StepConfig = {
+export type StepConfig = {
   persist: boolean;
   expandLogo?: boolean;
   fieldName: string;
   innerSteps: number;
   isRequired: boolean;
+  stepName: string;
+  save?: () => Promise<void>;
 }
 
 type Visit = {
@@ -40,9 +43,9 @@ type StateValues = Omit<State,
   | 'advance'
   | 'openInnerStep'
   | 'close'
-  | 'save'
   | 'canAdvance'
   | 'back'
+  | 'setFormValues'
 >;
 
 export type CurrStep = GetStepQuery["questionnaireSteps"][number] | null | {__typename: "NotFoundStep", id:string} | {__typename: "DoctorSelectionStep", id: string} | {__typename: "ThanksStep", id: string}
@@ -58,9 +61,9 @@ export type State = {
   advance: (skipSave?: boolean, skipLoadingCheck?: boolean) => Promise<void>,
   openInnerStep: (substep: number) => Promise<void>,
   close: () => Promise<void>,
-  save: () => Promise<void>,
   canAdvance: () => boolean,
   back: () => Promise<void>,
+  setFormValues: (values: Record<string, unknown>) => void;
 
   doctor: Doctor | null,
   sessionId: string | null,
@@ -80,6 +83,7 @@ export type State = {
   nextInterviews: Array<InterviewFragment>;
   hasDoctorSelectionScreen: boolean;
   isReady: boolean;
+  formValues: Record<string, unknown>;
 };
 
 const initialState:StateValues = {
@@ -101,6 +105,7 @@ const initialState:StateValues = {
   nextInterviews: [],
   hasDoctorSelectionScreen: false,
   isReady: false,
+  formValues: {},
 }
 
 export const useQuestionnaireStore = create<State>((set, get) => ({
@@ -114,18 +119,25 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     const linkCode = window.location.pathname.split("/")[1];
     set(() => ({shortId: linkCode}))
     
-    const { data } = await client.query<GetQuestionnaireQuery>({
-      query: GetQuestionnaire,
-      variables: { linkCode },
-    });
-    
-    set(() => ({institution: data.workflowLinks?.[0]?.institution as Institution}))
-    get().startWorkflow(
-      data.workflowLinks?.[0]?.workflow.latest.firstStepId,
-      data.workflowLinks?.[0]?.doctors as Array<Doctor>
-    );
+    try {
+      const { data } = await client.query<GetQuestionnaireQuery>({
+        query: GetQuestionnaire,
+        variables: { linkCode },
+      });
+      set(() => ({institution: data.workflowLinks?.[0]?.institution as Institution | null}))
+      get().startWorkflow(
+        data.workflowLinks?.[0]?.workflow.latest.firstStepId,
+        data.workflowLinks?.[0]?.doctors as Array<Doctor>
+      );
+    } catch {
+      get().startWorkflow(
+        null,
+        []
+      );
+    }
   },
   startWorkflow: async (firstStepId, doctors) => {
+    console.log("start workflow")
     set(() => ({isReady: true}))
     if (!firstStepId) {
         set((state) =>({
@@ -299,23 +311,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }))
 
   },
-  save: async () => {
-    const { stepConfig } = get()
-    if(!stepConfig?.persist) {
-      return;
-    }
-
-    // récupérer les values du form grace au fieldName
-
-    const { errors:answerErrors} = await client.mutate<AnswerMutation>({
-      mutation: Answer,
-      variables: { values: ["value"], session: get().sessionId, field: stepConfig.fieldName, order: get().visitedSteps.length, question: get().currStep!.id },
-    });
-
-    if(answerErrors?.length !== 0) {
-      // throw "An error occured saving response"
-    }
-  },
  advance: async (skipSave = false, skipLoadingCheck = false) => {
     const {
       currStep,
@@ -324,7 +319,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       sessionId,
       stepConfig
     } = get();
-
     if (currStep?.__typename === "ThanksStep") {
       get().reset();
       return;
@@ -348,9 +342,8 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     let interviewToVisit: InterviewFragment | null = null;
 
     try {
-      console.log("try")
       if (!skipSave) {
-        await get().save();
+        await ( stepConfig?.save?.() ?? commonSave(get()) );
       }
 
       set({ transitionDirection: "forward" });
@@ -517,10 +510,11 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }
   },
   canAdvance: () => {
-    const canAdvance = !get().isLoading && !(get()?.stepConfig?.isRequired ?? false) 
+    const canAdvance = !get().isLoading && (!(get()?.stepConfig?.isRequired ?? false) || !!get().formValues[get().stepConfig!.fieldName]) 
       // console.log("canAdvance")
       // console.log(canAdvance)
       // console.log(get().isLoading, get()?.stepConfig)
     return canAdvance
-  }
+  },
+  setFormValues: (values) => set((state) => ({ formValues:{...state.formValues, ...values} })),
 }));

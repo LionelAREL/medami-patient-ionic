@@ -13,30 +13,30 @@ const App = () => {
   useEffect(() => {
     reset()
   }, [])
-
   if(!isReady) {
     return (
         <div
+        key={0}
       style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100%',
         width: '100%',
-        backgroundColor: constant.lightBackground
+        backgroundColor: constant.lightBackground,
       }}
     >
       <Lottie
         animationData={loadingAnimation}
         loop
         style={{ width: 150, height: 150 }}
-      />
+        />
     </div>
     )
   }
 
   return (
-    <div style={{backgroundColor: constant.background, height: "100%", ...constant.textInputStyle}}>
+    <div key={1} style={{backgroundColor: constant.background, height: "100%", ...constant.textInputStyle}}>
       <Header/>
       <Question/>
       <Footer/>

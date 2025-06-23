@@ -1,7 +1,14 @@
-import React from 'react'
 import NotFound from './steps/NotFound'
 import Box from './common/Box'
-import { State, useQuestionnaireStore } from '../store'
+import { State, StepConfig, useQuestionnaireStore } from '../store'
+import CheckboxQuestion from './steps/CheckboxQuestion'
+import QuestionWrapper from './common/QuestionWrapper'
+import QuestionImage from "./../assets/images/question.svg";
+import NotFoundImage from "./../assets/images/404.svg"
+import SuccessImage from "./../assets/images/success.svg"
+import RadioQuestion from './steps/RadioQuestion'
+import ThanksStep from './steps/ThanksStep'
+
 
 type ChildProps = {
     state: State;
@@ -43,9 +50,6 @@ const Child = ({state}: ChildProps) => {
     //   return <AppointmentDateStep advance={advance} />
     //   break
 
-    // case 'QuestionnaireDocument':
-    //   return <DocumentStep />
-    //   break
 
     // case 'QuestionnaireIdentity': {
     //   const identity = currStep
@@ -101,13 +105,25 @@ const Child = ({state}: ChildProps) => {
     //   return <ThirdPartyStep advance={advance} />
     //   break
 
-    // case 'QuestionnaireRouter':
-    //   return <RouterStep />
-    //   break
-
-    // case 'RadioQuestion':
-    //   return <RadioStep step={currStep} advance={advance} />
-    //   break
+    case 'RadioQuestion':
+      { const stepConfig:StepConfig = {
+          persist: true,
+          fieldName: state.currStep.field ?? state.currStep.id,
+          innerSteps: 1,
+          isRequired: true,
+          stepName: 'Radio Input',
+        }
+       setState({stepConfig})
+      return <QuestionWrapper image={QuestionImage}>
+        {(form) => (
+          <RadioQuestion
+            currStep={state.currStep}
+            stepConfig={stepConfig}
+            form={form}
+          />
+        )}
+      </QuestionWrapper>
+      break }
 
     // case 'RangeQuestion':
     //   return <RangeStep step={currStep} advance={advance} />
@@ -117,9 +133,25 @@ const Child = ({state}: ChildProps) => {
     //   return <SelectStep step={currStep} advance={advance} />
     //   break
 
-    // case 'CheckboxQuestion':
-    //   return <CheckboxStep step={currStep} advance={advance} />
-    //   break
+    case 'CheckboxQuestion':
+      { const stepConfig:StepConfig = {
+          persist: true,
+          fieldName: state.currStep.field ?? state.currStep.id,
+          innerSteps: 1,
+          isRequired: false,
+          stepName: 'Checkbox Input',
+        }
+       setState({stepConfig})
+      return <QuestionWrapper image={QuestionImage}>
+        {(form) => (
+          <CheckboxQuestion
+            currStep={state.currStep}
+            stepConfig={stepConfig}
+            form={form}
+          />
+        )}
+      </QuestionWrapper>
+      break }
 
     // case 'TextQuestion':
     //   return <TextInputStep step={currStep} advance={advance} />
@@ -142,17 +174,35 @@ const Child = ({state}: ChildProps) => {
     //   break
     case 'NotFoundStep':
       return (
-        <NotFound/>
+       <QuestionWrapper image={NotFoundImage}>
+              {
+                () =>  (<NotFound/>)
+              }
+            </QuestionWrapper>
       )
-      break
+    case 'ThanksStep':
+      return (
+        <QuestionWrapper image={SuccessImage}>
+              {
+                () =>  (<ThanksStep/>)
+              }
+            </QuestionWrapper>
+      )
     default:
       setState({stepConfig: {
         persist: true,
         fieldName: "test",
         innerSteps: 1,
         isRequired: false,
+        stepName: "Not found"
       }})
-      return <Box>Data : {JSON.stringify(state.currStep)}</Box>
+      return (
+            <QuestionWrapper>
+              {
+                () =>  (<Box>Data : {JSON.stringify(state.currStep)}</Box>)
+              }
+            </QuestionWrapper>)
+
   }
 }
 

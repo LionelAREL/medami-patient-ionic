@@ -12,6 +12,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@apollo/client": "^3.13.8",
     "@capacitor/android": "^7.4.0",
     "@capacitor/app": "7.0.1",
@@ -27,6 +28,7 @@
     "@ionic/react-router": "^8.5.0",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
+    "antd": "^5.26.1",
     "ionicons": "^7.4.0",
     "jwt-decode": "^4.0.0",
     "lottie-react": "^2.4.1",
@@ -45,7 +47,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.4.3",
-    "@types/react": "19.0.10",
+    "@types/react": "^19.0.10",
     "@types/react-dom": "19.0.4",
     "@vitejs/plugin-legacy": "^5.0.0",
     "@vitejs/plugin-react": "^4.0.1",

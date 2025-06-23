@@ -1,4 +1,3 @@
-import React from 'react'
 import Box from '../common/Box'
 
 type DoctorSelectorProps = {
