@@ -1,13 +1,35 @@
 import { create } from "zustand";
 import { GetQuestionnaire } from "./../graphql/queries/questionnaire.graphql";
 import { GetInstitutionDoctors } from "./../graphql/queries/institution.graphql";
-import { CreateSession, CompleteInterview, ThirdPartySession } from "./../graphql/queries/interview.graphql";
-import { EvaluateStep, GetNextStep } from "./../graphql/queries/next_step.graphql";
+import {
+  CreateSession,
+  CompleteInterview,
+  ThirdPartySession,
+} from "./../graphql/queries/interview.graphql";
+import {
+  EvaluateStep,
+  GetNextStep,
+} from "./../graphql/queries/next_step.graphql";
 import { GetStep } from "./../graphql/queries/step.graphql";
 import { GetDoctor } from "./../graphql/queries/doctor.graphql";
 import { authPatient } from "./../graphql/queries/patient.graphql";
 import client from "../graphql/client";
-import { AuthPatientMutation, CompleteInterviewMutation, Doctor, GetDoctorQuery, GetNextStepQuery, Institution, InterviewFragment, QuestionnaireInterview, ThirdPartySessionQuery, type CreateSessionMutation, type EvaluateStepQuery, type GetInstitutionDoctorsQuery, type GetQuestionnaireQuery, type GetStepQuery } from "../graphql/generated/graphql";
+import {
+  AuthPatientMutation,
+  CompleteInterviewMutation,
+  Doctor,
+  GetDoctorQuery,
+  GetNextStepQuery,
+  Institution,
+  InterviewFragment,
+  QuestionnaireInterview,
+  ThirdPartySessionQuery,
+  type CreateSessionMutation,
+  type EvaluateStepQuery,
+  type GetInstitutionDoctorsQuery,
+  type GetQuestionnaireQuery,
+  type GetStepQuery,
+} from "../graphql/generated/graphql";
 import { jwtDecode } from "jwt-decode";
 import { getQueryParam } from "../utils/queryParams";
 import Child from "../components/Child";
@@ -16,7 +38,7 @@ import { commonSave } from "../utils/save/save";
 type ClientJWTToken = {
   sid: string;
   aud: string;
-}
+};
 
 export type StepConfig = {
   persist: boolean;
@@ -26,49 +48,52 @@ export type StepConfig = {
   isRequired: boolean;
   stepName: string;
   save?: () => Promise<void>;
-}
+};
 
 type Visit = {
   substep: number;
   resumeToStep?: string;
   interview?: InterviewFragment | null;
   step: CurrStep;
-}
+};
 
-type StateValues = Omit<State,
-  | 'reset'
-  | 'startWorkflow'
-  | 'openDoctorSelection'
-  | 'openStep'
-  | 'advance'
-  | 'openInnerStep'
-  | 'close'
-  | 'canAdvance'
-  | 'back'
-  | 'setFormValues'
+type StateValues = Omit<
+  State,
+  | "reset"
+  | "startWorkflow"
+  | "openDoctorSelection"
+  | "openStep"
+  | "advance"
+  | "openInnerStep"
+  | "close"
+  | "canAdvance"
+  | "back"
+  | "setFormValues"
 >;
 
-export type CurrStep = GetStepQuery["questionnaireSteps"][number] | null | {__typename: "NotFoundStep", id:string} | {__typename: "DoctorSelectionStep", id: string} | {__typename: "ThanksStep", id: string}
+export type CurrStep =
+  | GetStepQuery["questionnaireSteps"][number]
+  | null
+  | { __typename: "NotFoundStep"; id: string }
+  | { __typename: "DoctorSelectionStep"; id: string }
+  | { __typename: "ThanksStep"; id: string };
 
 export type State = {
   reset: () => void;
-  startWorkflow: (
-    firstStepId: string | null,
-    doctors: Array<Doctor>
-  ) => void;
-  openDoctorSelection: (doctors:Array<Doctor>, nexStepId: string) => void,
-  openStep: (firstStepId:string, substep?: number) => Promise<boolean>,
-  advance: (skipSave?: boolean, skipLoadingCheck?: boolean) => Promise<void>,
-  openInnerStep: (substep: number) => Promise<void>,
-  close: () => Promise<void>,
-  canAdvance: () => boolean,
-  back: () => Promise<void>,
+  startWorkflow: (firstStepId: string | null, doctors: Array<Doctor>) => void;
+  openDoctorSelection: (doctors: Array<Doctor>, nexStepId: string) => void;
+  openStep: (firstStepId: string, substep?: number) => Promise<boolean>;
+  advance: (skipSave?: boolean, skipLoadingCheck?: boolean) => Promise<void>;
+  openInnerStep: (substep: number) => Promise<void>;
+  close: () => Promise<void>;
+  canAdvance: () => boolean;
+  back: () => Promise<void>;
   setFormValues: (values: Record<string, unknown>) => void;
 
-  doctor: Doctor | null,
-  sessionId: string | null,
-  shortId: string | null,
-  token: string | null,
+  doctor: Doctor | null;
+  sessionId: string | null;
+  shortId: string | null;
+  token: string | null;
   isThirdParty: boolean;
   currStep: CurrStep;
   currSubStep: number | null;
@@ -79,14 +104,14 @@ export type State = {
   resumeToStep: string | null;
   stepConfig: StepConfig | null;
   visitedSteps: Array<Visit>;
-  transitionDirection: 'forward' | 'backward';
+  transitionDirection: "forward" | "backward";
   nextInterviews: Array<InterviewFragment>;
   hasDoctorSelectionScreen: boolean;
   isReady: boolean;
   formValues: Record<string, unknown>;
 };
 
-const initialState:StateValues = {
+const initialState: StateValues = {
   doctor: null,
   sessionId: null,
   shortId: null,
@@ -101,12 +126,12 @@ const initialState:StateValues = {
   resumeToStep: null,
   stepConfig: null,
   visitedSteps: [],
-  transitionDirection: 'forward',
+  transitionDirection: "forward",
   nextInterviews: [],
   hasDoctorSelectionScreen: false,
   isReady: false,
   formValues: {},
-}
+};
 
 export const useQuestionnaireStore = create<State>((set, get) => ({
   ...initialState,
@@ -114,70 +139,73 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
   reset: async () => {
     //@Todo Ajouter le systeme de failure
 
-    set(() => initialState)
+    set(() => initialState);
 
     const linkCode = window.location.pathname.split("/")[1];
-    set(() => ({shortId: linkCode}))
-    
+    set(() => ({ shortId: linkCode }));
+
     try {
       const { data } = await client.query<GetQuestionnaireQuery>({
         query: GetQuestionnaire,
         variables: { linkCode },
       });
-      set(() => ({institution: data.workflowLinks?.[0]?.institution as Institution | null}))
+      set(() => ({
+        institution: data.workflowLinks?.[0]?.institution as Institution | null,
+      }));
       get().startWorkflow(
         data.workflowLinks?.[0]?.workflow.latest.firstStepId,
-        data.workflowLinks?.[0]?.doctors as Array<Doctor>
+        data.workflowLinks?.[0]?.doctors as Array<Doctor>,
       );
     } catch {
-      get().startWorkflow(
-        null,
-        []
-      );
+      get().startWorkflow(null, []);
     }
   },
   startWorkflow: async (firstStepId, doctors) => {
-    console.log("start workflow")
-    set(() => ({isReady: true}))
+    console.log("start workflow");
+    set(() => ({ isReady: true }));
     if (!firstStepId) {
-        set((state) =>({
-          currStep: {__typename: "NotFoundStep", id:"NOT_FOUND"},
-          child: <Child state={state} />
-        }))
-        return
+      set((state) => ({
+        currStep: { __typename: "NotFoundStep", id: "NOT_FOUND" },
+        child: <Child state={state} />,
+      }));
+      return;
     }
 
-    const linkToken = get().linkToken
+    const linkToken = get().linkToken;
 
-    if(linkToken) {
+    if (linkToken) {
       const decodedLinkToken = jwtDecode<ClientJWTToken>(linkToken);
 
-      const doctorId = decodedLinkToken.aud
-      const { data:getDoctorData } =  await client.query<GetDoctorQuery>({
+      const doctorId = decodedLinkToken.aud;
+      const { data: getDoctorData } = await client.query<GetDoctorQuery>({
         query: GetDoctor,
         variables: { id: doctorId },
       });
-      set(() => ({doctor: getDoctorData.doctors?.[0] as Doctor}));
+      set(() => ({ doctor: getDoctorData.doctors?.[0] as Doctor }));
 
       get().openStep(firstStepId);
-      return
+      return;
     }
-    if(doctors.length === 0) {
-      set(() => ({isReady: false}))
-      const { data:getInstitutionDoctorData } = await client.query<GetInstitutionDoctorsQuery>({
-        query: GetInstitutionDoctors,
-        variables: { id: get()?.institution?.id },
-      });
-      set(() => ({isReady: true}))
-      get().openDoctorSelection(getInstitutionDoctorData.institutions?.[0]?.doctors as Array<Doctor>, firstStepId)
-      return
+    if (doctors.length === 0) {
+      set(() => ({ isReady: false }));
+      const { data: getInstitutionDoctorData } =
+        await client.query<GetInstitutionDoctorsQuery>({
+          query: GetInstitutionDoctors,
+          variables: { id: get()?.institution?.id },
+        });
+      set(() => ({ isReady: true }));
+      get().openDoctorSelection(
+        getInstitutionDoctorData.institutions?.[0]?.doctors as Array<Doctor>,
+        firstStepId,
+      );
+      return;
     }
-    if(doctors.length !== 1) {
+    if (doctors.length !== 1) {
       get().openDoctorSelection(doctors, firstStepId);
-      return
+      return;
     }
 
-    set(() => ({doctor: doctors?.[0] as Doctor}))
+    set(() => ({ doctor: doctors?.[0] as Doctor }));
     try {
       get().openStep(firstStepId);
     } catch {
@@ -185,140 +213,148 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }
   },
   openDoctorSelection: () => {
-    set((state) =>({
-      currStep: {__typename: "DoctorSelectionStep", id: "DOCTOR_SELECTION"},
+    set((state) => ({
+      currStep: { __typename: "DoctorSelectionStep", id: "DOCTOR_SELECTION" },
       child: <Child state={state} />,
-      isLoading: false
-    }));    
+      isLoading: false,
+    }));
   },
   openStep: async (stepId, substep = 1) => {
     const savedStep = get().currStep;
 
-    console.log("openStep")
-    if(!get().sessionId) {
-      const { data:createSessionData } = await client.mutate<CreateSessionMutation>(
-        {
+    console.log("openStep");
+    if (!get().sessionId) {
+      const { data: createSessionData } =
+        await client.mutate<CreateSessionMutation>({
           mutation: CreateSession,
           variables: {
             doctorId: get().doctor?.id,
             isDeviceLink: false,
-            linkId: get().shortId
-          }
-        }
-      )
-      const token = createSessionData?.createSession;
-      set(() => ({token}))
-
-      if(get().linkToken) {
-        const { data:authPatientData } = await client.mutate<AuthPatientMutation>({
-          mutation: authPatient,
-          variables: { token: get().linkToken },
+            linkId: get().shortId,
+          },
         });
+      const token = createSessionData?.createSession;
+      set(() => ({ token }));
 
-        if(authPatientData?.authPatient) {
-          set(() => ({token: authPatientData.authPatient}))
+      if (get().linkToken) {
+        const { data: authPatientData } =
+          await client.mutate<AuthPatientMutation>({
+            mutation: authPatient,
+            variables: { token: get().linkToken },
+          });
+
+        if (authPatientData?.authPatient) {
+          set(() => ({ token: authPatientData.authPatient }));
         }
       }
 
-      set((state) => ({sessionId: jwtDecode<ClientJWTToken>(state.token ?? "").sid})) //@Todo find better way than '?? ""'
+      set((state) => ({
+        sessionId: jwtDecode<ClientJWTToken>(state.token ?? "").sid,
+      })); //@Todo find better way than '?? ""'
 
-      if(!get().sessionId) {
-        throw("Unable to create session")
+      if (!get().sessionId) {
+        throw "Unable to create session";
       }
     }
-      
-    const { data:getStepData } = await client.query<GetStepQuery>({
+
+    const { data: getStepData } = await client.query<GetStepQuery>({
       query: GetStep,
       variables: { id: stepId, session: get().sessionId },
     });
 
-    set(() => ({currStep: getStepData.questionnaireSteps?.[0]}))
+    set(() => ({ currStep: getStepData.questionnaireSteps?.[0] }));
 
-    if(!get().currStep) {
-      console.log("error no currStep")
-      set(() => ({currStep: savedStep}))
-      return false
+    if (!get().currStep) {
+      console.log("error no currStep");
+      set(() => ({ currStep: savedStep }));
+      return false;
     }
 
-    set(() => ({isThirdParty: getStepData.isThirdPartySession ?? false}))
+    set(() => ({ isThirdParty: getStepData.isThirdPartySession ?? false }));
 
-    if(get().currStep?.__typename === "QuestionnaireRouter") {
+    if (get().currStep?.__typename === "QuestionnaireRouter") {
       // This can happen when the router is the first node of an interview
-      const {data:nextStepData, errors:nextStepErrors} = await client.query<EvaluateStepQuery>({
-        query: EvaluateStep,
-        variables: { question: get().currStep?.id, session: get().sessionId },
-      });
+      const { data: nextStepData, errors: nextStepErrors } =
+        await client.query<EvaluateStepQuery>({
+          query: EvaluateStep,
+          variables: { question: get().currStep?.id, session: get().sessionId },
+        });
 
-      if(nextStepErrors?.length !== 0) {
-        console.log("error nextStep")
-        set(() => ({currStep: savedStep}))
-        return false
+      if (nextStepErrors?.length !== 0) {
+        console.log("error nextStep");
+        set(() => ({ currStep: savedStep }));
+        return false;
       }
 
       const nextStep = nextStepData.evaluateStep;
 
-      if(nextStep) {
-        return get().openStep(nextStep)
+      if (nextStep) {
+        return get().openStep(nextStep);
       }
 
       // Router resolve to dead end meaning it's either end of questionnaire or end of interview,
       // can happen if the interview starts with a router that resolves to nothing
       // For example, the router acts as a condition to run the interview or not
-      set(() => ({currStep: null}))
-      get().advance()
+      set(() => ({ currStep: null }));
+      get().advance();
       return false;
-
     }
 
-    if (get().linkToken != null && (get().currStep?.__typename == "QuestionnaireIdentity" || get().currStep?.__typename == "QuestionnaireThirdParty")) {
+    if (
+      get().linkToken != null &&
+      (get().currStep?.__typename == "QuestionnaireIdentity" ||
+        get().currStep?.__typename == "QuestionnaireThirdParty")
+    ) {
       await get().advance();
     }
 
-    set(() => ({currSubStep: substep}))
+    set(() => ({ currSubStep: substep }));
 
     // Important to keep child creation even for non visible widget such as Interview because it holds configuration such as innerSteps count
     // @todo consider using null instead for non visible widgets
-    set((state) => ({child: <Child state={state} />}))
+    set((state) => ({ child: <Child state={state} /> }));
 
-    if(get().currStep?.__typename === "QuestionnaireInterview") {
-      console.log('entering questionnaire, saving resume to step : ${resumeToStep}');
-      set((state) => ({resumeToStep: state.currStep?.id}))
+    if (get().currStep?.__typename === "QuestionnaireInterview") {
+      console.log(
+        "entering questionnaire, saving resume to step : ${resumeToStep}",
+      );
+      set((state) => ({ resumeToStep: state.currStep?.id }));
 
-      const isFirstStepOnCooldown = (get().currStep as QuestionnaireInterview).questionnaire?.latest.isFirstStepOnCooldown;
+      const isFirstStepOnCooldown = (get().currStep as QuestionnaireInterview)
+        .questionnaire?.latest.isFirstStepOnCooldown;
 
-      const isOpenStepSuccess = get().openStep((get().currStep as QuestionnaireInterview).questionnaire?.latest.firstStepId ?? "")
+      const isOpenStepSuccess = get().openStep(
+        (get().currStep as QuestionnaireInterview).questionnaire?.latest
+          .firstStepId ?? "",
+      );
 
-      if(!isOpenStepSuccess && get().currStep?.__typename === "QuestionnaireInterview") {
-        set(() => ({currStep: savedStep}))
+      if (
+        !isOpenStepSuccess &&
+        get().currStep?.__typename === "QuestionnaireInterview"
+      ) {
+        set(() => ({ currStep: savedStep }));
       }
 
-      if(isFirstStepOnCooldown) {
+      if (isFirstStepOnCooldown) {
         get().advance();
       }
 
       return isOpenStepSuccess;
     }
 
-    set(() => ({isLoading: false}))
-    return true
+    set(() => ({ isLoading: false }));
+    return true;
   },
   openInnerStep: async (substep) => {
-    set(() => ({currSubStep: substep}))
+    set(() => ({ currSubStep: substep }));
 
     set((state) => ({
       child: <Child state={state} />,
       isLoading: false,
-    }))
-
+    }));
   },
- advance: async (skipSave = false, skipLoadingCheck = false) => {
-    const {
-      currStep,
-      currSubStep,
-      isLoading,
-      sessionId,
-      stepConfig
-    } = get();
+  advance: async (skipSave = false, skipLoadingCheck = false) => {
+    const { currStep, currSubStep, isLoading, sessionId, stepConfig } = get();
     if (currStep?.__typename === "ThanksStep") {
       get().reset();
       return;
@@ -343,7 +379,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     try {
       if (!skipSave) {
-        await ( stepConfig?.save?.() ?? commonSave(get()) );
+        await (stepConfig?.save?.() ?? commonSave(get()));
       }
 
       set({ transitionDirection: "forward" });
@@ -356,9 +392,9 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       }
 
       if (currStep?.__typename === "QuestionnaireSelectMenu") {
-         // If the previous step was an interview selector, then insert selected interviews before the next step
-          // @todo Find a way to handle this case on server side
-          set(() => ({resumeToStep: currStep.id})); // Save this step to resume from it after all sub questionnaires have been completed
+        // If the previous step was an interview selector, then insert selected interviews before the next step
+        // @todo Find a way to handle this case on server side
+        set(() => ({ resumeToStep: currStep.id })); // Save this step to resume from it after all sub questionnaires have been completed
 
         // const entries =
         //   form.currentState!.value[stepConfig!.fieldName] as Array<{
@@ -374,10 +410,11 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       }
 
       if (!nextStepId && currStep) {
-        const { data:nextStepData, errors:nextStepErrors } = await client.query<GetNextStepQuery>({
-          query: GetNextStep,
-          variables: { question: currStep.id, session: sessionId },
-        });
+        const { data: nextStepData, errors: nextStepErrors } =
+          await client.query<GetNextStepQuery>({
+            query: GetNextStep,
+            variables: { question: currStep.id, session: sessionId },
+          });
         if (nextStepErrors?.length) {
           set({ isLoading: false });
           return;
@@ -395,12 +432,13 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
           }));
           nextStepId = interviewToVisit?.latest.firstStepId;
         } else if (get().resumeToStep) {
-          console.log('resume to step ${resumeToStep}');
+          console.log("resume to step ${resumeToStep}");
           const rid = get().resumeToStep;
-          const { data:nextStepData, errors:nextStepErrors } = await client.query<GetNextStepQuery>({
-            query: GetNextStep,
-            variables: { question: rid, session: sessionId! },
-          });
+          const { data: nextStepData, errors: nextStepErrors } =
+            await client.query<GetNextStepQuery>({
+              query: GetNextStep,
+              variables: { question: rid, session: sessionId! },
+            });
           if (nextStepErrors?.length) {
             set({ isLoading: false });
             return;
@@ -426,10 +464,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       return;
     }
 
-    if (
-      currStep &&
-      currStep.__typename !== "QuestionnaireInterview"
-    ) {
+    if (currStep && currStep.__typename !== "QuestionnaireInterview") {
       set((state) => ({
         visitedSteps: [
           ...state.visitedSteps,
@@ -443,7 +478,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       }));
     }
   },
- close: async () => {
+  close: async () => {
     const { sessionId } = get();
 
     client
@@ -452,7 +487,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
         variables: { session: sessionId! },
       })
       .catch(() => {
-        console.log("error on complete interview")
+        console.log("error on complete interview");
       });
 
     try {
@@ -462,59 +497,62 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       });
       set({ isThirdParty: data.isThirdPartySession ?? false });
     } catch {
-      console.log("error on thirdPartySession")
+      console.log("error on thirdPartySession");
     }
-      console.log("thanks")
-       set(() =>({
-          currStep: {__typename: "ThanksStep", id:"THANKS"},
-        }))
-      set((state) =>({
-        child: <Child state={state} />,
-        isLoading: false,
-      }))
+    console.log("thanks");
+    set(() => ({
+      currStep: { __typename: "ThanksStep", id: "THANKS" },
+    }));
+    set((state) => ({
+      child: <Child state={state} />,
+      isLoading: false,
+    }));
 
     // set({ failureCounter: 0 });
   },
   back: async () => {
-    set(() => ({transitionDirection: 'backward'}))
+    set(() => ({ transitionDirection: "backward" }));
     const current = get().visitedSteps.pop();
-    
-    if(get().visitedSteps.length === 0) {
+
+    if (get().visitedSteps.length === 0) {
       get().reset();
       return;
     }
-    
-    
-    const newStep = get().visitedSteps[get().visitedSteps.length - 1]
 
-    set({ resumeToStep: newStep.resumeToStep })
+    const newStep = get().visitedSteps[get().visitedSteps.length - 1];
+
+    set({ resumeToStep: newStep.resumeToStep });
 
     if (
       current?.interview != null &&
       newStep.interview?.id !== current.interview.id
     ) {
-      set(state => ({
+      set((state) => ({
         nextInterviews: [current.interview!, ...state.nextInterviews],
-      }))
+      }));
     }
 
     if (newStep?.step?.id === current?.step?.id) {
-      await get().openInnerStep(newStep.substep)
+      await get().openInnerStep(newStep.substep);
     } else {
-      const opened = await get().openStep(newStep.step!.id, newStep.substep)
+      const opened = await get().openStep(newStep.step!.id, newStep.substep);
       if (!opened) {
-        set(state => ({
+        set((state) => ({
           visitedSteps: [...state.visitedSteps, current!],
-        }))
+        }));
       }
     }
   },
   canAdvance: () => {
-    const canAdvance = !get().isLoading && (!(get()?.stepConfig?.isRequired ?? false) || !!get().formValues[get().stepConfig!.fieldName]) 
-      // console.log("canAdvance")
-      // console.log(canAdvance)
-      // console.log(get().isLoading, get()?.stepConfig)
-    return canAdvance
+    const canAdvance =
+      !get().isLoading &&
+      (!(get()?.stepConfig?.isRequired ?? false) ||
+        !!get().formValues[get().stepConfig!.fieldName]);
+    // console.log("canAdvance")
+    // console.log(canAdvance)
+    // console.log(get().isLoading, get()?.stepConfig)
+    return canAdvance;
   },
-  setFormValues: (values) => set((state) => ({ formValues:{...state.formValues, ...values} })),
+  setFormValues: (values) =>
+    set((state) => ({ formValues: { ...state.formValues, ...values } })),
 }));

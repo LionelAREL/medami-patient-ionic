@@ -1,15 +1,11 @@
-import Box from '../common/Box'
+import Box from "../common/Box";
 
 type DoctorSelectorProps = {
-    doctors: unknown;
-}
+  doctors: unknown;
+};
 
-const DoctorSelector = ({doctors}: DoctorSelectorProps) => {
-  return (
-    <Box>
-        {JSON.stringify(doctors)}
-    </Box>
-  )
-}
+const DoctorSelector = ({ doctors }: DoctorSelectorProps) => {
+  return <Box>{JSON.stringify(doctors)}</Box>;
+};
 
-export default DoctorSelector
+export default DoctorSelector;

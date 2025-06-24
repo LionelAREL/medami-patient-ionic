@@ -1,23 +1,31 @@
-import React from 'react'
+import React from "react";
 
-type ResponsiveImageProps = React.ComponentProps<'img'> & {
-    baseName?: string,
-    extension?: string
-}
+type ResponsiveImageProps = React.ComponentProps<"img"> & {
+  baseName?: string;
+  extension?: string;
+};
 
-const ResponsiveImage = ({baseName, extension = 'png', ...props}: ResponsiveImageProps) => {
+const ResponsiveImage = ({
+  baseName,
+  extension = "png",
+  ...props
+}: ResponsiveImageProps) => {
   return (
     <img
-      style={{objectFit: 'contain'}}
+      style={{ objectFit: "contain" }}
       src={baseName ? `/images/${baseName}@1x.${extension}` : undefined}
-      srcSet={baseName ? `
+      srcSet={
+        baseName
+          ? `
         /images/${baseName}@1x.${extension} 1x,
         /images/${baseName}@2x.${extension} 2x,
         /images/${baseName}@3x.${extension} 3x
-      ` : undefined}
+      `
+          : undefined
+      }
       {...props}
     />
   );
-}
+};
 
-export default ResponsiveImage
+export default ResponsiveImage;
