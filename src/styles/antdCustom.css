@@ -1,0 +1,36 @@
+.ant-radio .ant-radio-inner {
+  border-width: 2px;
+}
+
+.ant-radio-wrapper:hover .ant-radio-inner {
+  box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.05);
+  border-color: #000;
+}
+
+.ant-radio-wrapper {
+  color: var(--font-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
+.ant-checkbox-wrapper {
+  color: var(--font-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
+.ant-select-selector {
+  background-color: transparent !important;
+}
+
+.ant-select-selection-item {
+  color: var(--font-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
+.ant-select-item-option-content {
+  color: var(--font-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}

@@ -1,20 +1,20 @@
+import { Form, FormInstance, Input, Select } from "antd";
 import { CurrStep, StepConfig, useQuestionnaireStore } from "../../store";
-import { Form, FormInstance, Radio } from "antd";
 import { GetStepQuery } from "../../graphql/generated/graphql";
 import Label from "../common/Label";
 
-type RadioQuestionProps = {
+type SelectQuestionProps = {
   form: FormInstance<unknown> | undefined;
   currStep: CurrStep;
   stepConfig: StepConfig | null;
 };
 
-const RadioQuestion = ({ currStep, stepConfig }: RadioQuestionProps) => {
+const SelectQuestion = ({ stepConfig, currStep }: SelectQuestionProps) => {
   const { advance } = useQuestionnaireStore();
   const options = (
     currStep as Extract<
       GetStepQuery["questionnaireSteps"][number],
-      { __typename: "RadioQuestion" }
+      { __typename: "SelectQuestion" }
     >
   ).choices.map((choice) => ({
     label: choice.label,
@@ -23,20 +23,17 @@ const RadioQuestion = ({ currStep, stepConfig }: RadioQuestionProps) => {
   const hint = (
     currStep as Extract<
       GetStepQuery["questionnaireSteps"][number],
-      { __typename: "RadioQuestion" }
+      { __typename: "SelectQuestion" }
     >
   ).hint;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Label>{hint}</Label>
-      <Form.Item name={stepConfig?.fieldName} style={{ paddingLeft: 10 }}>
-        <Radio.Group
+      <Form.Item name={stepConfig?.fieldName}>
+        <Select
+          variant="underlined"
+          //   style={{ width: 120 }}
           onChange={() => advance()}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 15,
-          }}
           options={options}
         />
       </Form.Item>
@@ -44,4 +41,4 @@ const RadioQuestion = ({ currStep, stepConfig }: RadioQuestionProps) => {
   );
 };
 
-export default RadioQuestion;
+export default SelectQuestion;

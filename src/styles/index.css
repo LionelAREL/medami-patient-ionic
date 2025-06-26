@@ -16,3 +16,13 @@ body,
 * {
   box-sizing: border-box;
 }
+
+:root {
+  --font-color: #0753ac;
+  --font-family: "Open Sans", sans-serif;
+  --font-size: 16px;
+}
+
+.ant-form-item {
+  margin-bottom: 0 !important;
+}

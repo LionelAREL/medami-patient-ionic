@@ -6,44 +6,64 @@ import QuestionWrapper from "./common/QuestionWrapper";
 import QuestionImage from "./../assets/images/question.svg";
 import NotFoundImage from "./../assets/images/404.svg";
 import SuccessImage from "./../assets/images/success.svg";
+import WelcomeImage from "./../assets/images/home_visual.svg";
+import ThirdPartyImage from "./../assets/images/third_party.svg";
 import RadioQuestion from "./steps/RadioQuestion";
 import ThanksStep from "./steps/ThanksStep";
+import TextQuestion from "./steps/TextQuestion";
+import RangeQuestion from "./steps/RangeQuestion";
+import SelectQuestion from "./steps/SelectQuestion";
+import WelcomeStep from "./steps/WelcomeStep";
+import ThirdPartyStep from "./steps/ThirdPartyStep";
+import ConditionalStep from "./steps/ConditionalStep";
+import InfoStep from "./steps/InfoStep";
+import { getStepConfig } from "../utils/save/stepConfig";
+import { useEffect } from "react";
 
 type ChildProps = {
   state: State;
 };
 
 const Child = ({ state }: ChildProps) => {
+  const stepConfig = getStepConfig(state.currStep);
   const setState = useQuestionnaireStore.setState;
+
+  useEffect(() => {
+    setState({ stepConfig: getStepConfig(state.currStep) });
+  }, [state.currStep]);
+
   switch (state.currStep?.__typename) {
-    // case 'QuestionnaireWelcomeStep':
-    //   return (
-    //     <StartStep
-    //       doctor={doctor!}
-    //       step={currStep}
-    //     />
-    //   )
-    //   break
+    case "QuestionnaireWelcomeStep": {
+      return (
+        <QuestionWrapper image={WelcomeImage} isExpandLogo={true}>
+          {(form) => (
+            <WelcomeStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
-    // case 'QuestionnaireInfoStep':
-    //   return (
-    //     <InfoStep
-    //       doctor={doctor!}
-    //       step={currStep}
-    //       advance={advance}
-    //       form={formKey}
-    //     />
-    //   )
-    //   break
+    case "QuestionnaireInfoStep": {
+      return <InfoStep currStep={state.currStep} stepConfig={stepConfig} />;
+    }
 
-    // case 'QuestionnaireCondition':
-    //   return (
-    //     <ConditionalStep
-    //       step={currStep}
-    //       advance={advance}
-    //     />
-    //   )
-    //   break
+    case "QuestionnaireCondition": {
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <ConditionalStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
     // case 'QuestionnaireAppointmentDate':
     //   return <AppointmentDateStep advance={advance} />
@@ -99,19 +119,20 @@ const Child = ({ state }: ChildProps) => {
     //   return <SurveyStep />
     //   break
 
-    // case 'QuestionnaireThirdParty':
-    //   return <ThirdPartyStep advance={advance} />
-    //   break
-
+    case "QuestionnaireThirdParty": {
+      return (
+        <QuestionWrapper image={ThirdPartyImage}>
+          {(form) => (
+            <ThirdPartyStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
     case "RadioQuestion": {
-      const stepConfig: StepConfig = {
-        persist: true,
-        fieldName: state.currStep.field ?? state.currStep.id,
-        innerSteps: 1,
-        isRequired: true,
-        stepName: "Radio Input",
-      };
-      setState({ stepConfig });
       return (
         <QuestionWrapper image={QuestionImage}>
           {(form) => (
@@ -123,26 +144,37 @@ const Child = ({ state }: ChildProps) => {
           )}
         </QuestionWrapper>
       );
-      break;
     }
 
-    // case 'RangeQuestion':
-    //   return <RangeStep step={currStep} advance={advance} />
-    //   break
+    case "RangeQuestion": {
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <RangeQuestion
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
-    // case 'SelectQuestion':
-    //   return <SelectStep step={currStep} advance={advance} />
-    //   break
+    case "SelectQuestion": {
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <SelectQuestion
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
     case "CheckboxQuestion": {
-      const stepConfig: StepConfig = {
-        persist: true,
-        fieldName: state.currStep.field ?? state.currStep.id,
-        innerSteps: 1,
-        isRequired: false,
-        stepName: "Checkbox Input",
-      };
-      setState({ stepConfig });
       return (
         <QuestionWrapper image={QuestionImage}>
           {(form) => (
@@ -154,12 +186,20 @@ const Child = ({ state }: ChildProps) => {
           )}
         </QuestionWrapper>
       );
-      break;
     }
 
-    // case 'TextQuestion':
-    //   return <TextInputStep step={currStep} advance={advance} />
-    //   break
+    case "TextQuestion":
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <TextQuestion
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
 
     // case 'DateQuestion':
     //   return <DateStep step={currStep} advance={advance} />
@@ -189,15 +229,6 @@ const Child = ({ state }: ChildProps) => {
         </QuestionWrapper>
       );
     default:
-      setState({
-        stepConfig: {
-          persist: true,
-          fieldName: "test",
-          innerSteps: 1,
-          isRequired: false,
-          stepName: "Not found",
-        },
-      });
       return (
         <QuestionWrapper>
           {() => <Box>Data : {JSON.stringify(state.currStep)}</Box>}

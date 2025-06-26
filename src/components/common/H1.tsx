@@ -1,6 +1,6 @@
 import { constant } from "../../styles/constants";
 
-type H1Props = React.PropsWithChildren<React.HTMLAttributes<HTMLBaseElement>>;
+type H1Props = React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>;
 
 const H1 = ({ children, ...props }: H1Props) => {
   return (

@@ -12,6 +12,30 @@ const Footer = () => {
     return null;
   }
 
+  if (currStep?.__typename === "QuestionnaireWelcomeStep") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+          position: "absolute",
+          bottom: "0",
+          left: 0,
+          right: 0,
+          paddingBottom: isFull ? 0 : "60px",
+        }}
+      >
+        <NavigationButton
+          variant="primary"
+          isFull={isFull}
+          onClick={() => advance()}
+        >
+          Démarrer
+        </NavigationButton>
+      </div>
+    );
+  }
   if (currStep?.__typename === "ThanksStep") {
     return (
       <div

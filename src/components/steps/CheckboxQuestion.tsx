@@ -1,6 +1,8 @@
 import { CurrStep, StepConfig } from "../../store";
 import { Checkbox, Form, FormInstance, GetProp } from "antd";
 import { GetStepQuery } from "../../graphql/generated/graphql";
+import { constant } from "../../styles/constants";
+import Label from "../common/Label";
 
 type CheckboxQuestionProps = {
   form: FormInstance<unknown> | undefined;
@@ -14,7 +16,7 @@ const CheckboxQuestion = ({
   stepConfig,
 }: CheckboxQuestionProps) => {
   const onChange: GetProp<typeof Checkbox.Group, "onChange"> = (
-    checkedValues,
+    checkedValues
   ) => {
     form?.setFieldValue(stepConfig?.fieldName, checkedValues);
   };
@@ -28,14 +30,33 @@ const CheckboxQuestion = ({
     label: choice.label,
     value: choice.label,
   }));
+
+  const hint = (
+    currStep as Extract<
+      GetStepQuery["questionnaireSteps"][number],
+      { __typename: "CheckboxQuestion" }
+    >
+  ).hint;
   return (
-    <Form.Item name={stepConfig?.fieldName} valuePropName="checked">
-      <Checkbox.Group
-        style={{ display: "flex", flexDirection: "column" }}
-        onChange={onChange}
-        options={options}
-      />
-    </Form.Item>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Label>{hint}</Label>
+      <Form.Item
+        name={stepConfig?.fieldName}
+        style={{ paddingLeft: 10 }}
+        valuePropName="checked"
+      >
+        <Checkbox.Group
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 15,
+            ...constant.textInputStyle,
+          }}
+          onChange={onChange}
+          options={options}
+        />
+      </Form.Item>
+    </div>
   );
 };
 

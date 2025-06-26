@@ -47,7 +47,7 @@ export type StepConfig = {
   innerSteps: number;
   isRequired: boolean;
   stepName: string;
-  save?: () => Promise<void>;
+  save?: (state: State) => Promise<void>;
 };
 
 type Visit = {
@@ -154,7 +154,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       }));
       get().startWorkflow(
         data.workflowLinks?.[0]?.workflow.latest.firstStepId,
-        data.workflowLinks?.[0]?.doctors as Array<Doctor>,
+        data.workflowLinks?.[0]?.doctors as Array<Doctor>
       );
     } catch {
       get().startWorkflow(null, []);
@@ -196,7 +196,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       set(() => ({ isReady: true }));
       get().openDoctorSelection(
         getInstitutionDoctorData.institutions?.[0]?.doctors as Array<Doctor>,
-        firstStepId,
+        firstStepId
       );
       return;
     }
@@ -312,11 +312,12 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     // Important to keep child creation even for non visible widget such as Interview because it holds configuration such as innerSteps count
     // @todo consider using null instead for non visible widgets
+    console.log("2");
     set((state) => ({ child: <Child state={state} /> }));
 
     if (get().currStep?.__typename === "QuestionnaireInterview") {
       console.log(
-        "entering questionnaire, saving resume to step : ${resumeToStep}",
+        "entering questionnaire, saving resume to step : ${resumeToStep}"
       );
       set((state) => ({ resumeToStep: state.currStep?.id }));
 
@@ -325,7 +326,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
       const isOpenStepSuccess = get().openStep(
         (get().currStep as QuestionnaireInterview).questionnaire?.latest
-          .firstStepId ?? "",
+          .firstStepId ?? ""
       );
 
       if (
@@ -347,7 +348,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
   },
   openInnerStep: async (substep) => {
     set(() => ({ currSubStep: substep }));
-
+    console.log("3");
     set((state) => ({
       child: <Child state={state} />,
       isLoading: false,
@@ -379,7 +380,9 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     try {
       if (!skipSave) {
-        await (stepConfig?.save?.() ?? commonSave(get()));
+        console.log("stepConfig");
+        console.log(stepConfig);
+        await (stepConfig?.save?.(get()) ?? commonSave(get()));
       }
 
       set({ transitionDirection: "forward" });

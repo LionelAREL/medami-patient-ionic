@@ -20,16 +20,16 @@ const Question = () => {
         }}
         initial={
           transitionDirection === "forward"
-            ? { x: "100vw", y: "-50%" }
-            : { x: "-100vw", y: "-50%" }
+            ? { x: "150vw", y: "-50%" }
+            : { x: "-150vw", y: "-50%" }
         }
         animate={{ x: "-50%", y: "-50%" }}
         exit={
           transitionDirection === "forward"
-            ? { x: "-100vw", y: "-50%" }
-            : { x: "100vw", y: "-50%" }
+            ? { x: "-150vw", y: "-50%" }
+            : { x: "150vw", y: "-50%" }
         }
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
       >
         {child}
       </motion.div>

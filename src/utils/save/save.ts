@@ -13,14 +13,15 @@ export const commonSave = async (state: State) => {
   console.log("Voici le form au save: ", state.formValues);
   console.log(
     "Voici la value à save: ",
-    state.formValues[state.stepConfig.fieldName],
+    state.formValues[state.stepConfig.fieldName]
   );
 
-  const answer = state.formValues[state.stepConfig.fieldName];
+  const values = state.formValues[state.stepConfig.fieldName];
 
-  if (!answer) {
+  if (!values) {
     return;
   }
+  const answer = Array.isArray(values) ? values : [String(values)];
 
   const { errors: answerErrors } = await client.mutate<AnswerMutation>({
     mutation: Answer,

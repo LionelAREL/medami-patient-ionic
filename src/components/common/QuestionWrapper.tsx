@@ -5,14 +5,22 @@ import useStepImageWidth from "../../utils/hooks/useStepImageWidth";
 import { Form, FormInstance } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { useQuestionnaireStore } from "../../store";
+import { Display, useFitsIn } from "../../utils/hooks/useFitsIn";
 
 type QuestionWrapperProps = {
   image?: string;
   children: (form: FormInstance) => React.ReactNode;
+  bottomChildren?: (form: FormInstance) => React.ReactNode;
+  isExpandLogo?: boolean;
 };
 
-const QuestionWrapper = ({ image, children }: QuestionWrapperProps) => {
+const QuestionWrapper = ({
+  image,
+  children,
+  isExpandLogo = false,
+}: QuestionWrapperProps) => {
   const { formValues, setFormValues } = useQuestionnaireStore();
+  const isMobile = useFitsIn(Display.MOBILE);
   const width = useStepImageWidth();
 
   const [form] = useForm();
@@ -22,16 +30,28 @@ const QuestionWrapper = ({ image, children }: QuestionWrapperProps) => {
   }, []);
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        {image && <ResponsiveImage src={image} width={width} />}
-        <Box style={{ width: "90vw", maxWidth: "400px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: isExpandLogo ? (isMobile ? "column" : "row") : "column",
+        alignItems: "center",
+      }}
+    >
+      {image && (
+        <ResponsiveImage
+          src={image}
+          width={!isMobile && isExpandLogo ? 400 : width}
+        />
+      )}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <Box
+          style={{
+            width: "90vw",
+            maxWidth: "400px",
+            maxHeight: "calc(100vh - 550px)",
+            overflowY: "auto",
+          }}
+        >
           <Form
             form={form}
             onValuesChange={(values) => {

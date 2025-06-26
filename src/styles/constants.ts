@@ -24,6 +24,7 @@ export const constant = {
   graphBlock: "#E9F1FC",
   transparent: "transparent",
   warning: "#FCC419",
+  borderColor: "#504848",
 
   // Paddings
   paddingExtraSmall: 5,
