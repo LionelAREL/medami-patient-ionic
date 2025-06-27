@@ -12,20 +12,13 @@ type RadioQuestionProps = {
 const RadioQuestion = ({ currStep, stepConfig }: RadioQuestionProps) => {
   const { advance } = useQuestionnaireStore();
   const options = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "RadioQuestion" }
-    >
+    currStep as Extract<CurrStep, { __typename: "RadioQuestion" }>
   ).choices.map((choice) => ({
     label: choice.label,
     value: choice.label,
   }));
-  const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "RadioQuestion" }
-    >
-  ).hint;
+  const hint = (currStep as Extract<CurrStep, { __typename: "RadioQuestion" }>)
+    .hint;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Label>{hint}</Label>

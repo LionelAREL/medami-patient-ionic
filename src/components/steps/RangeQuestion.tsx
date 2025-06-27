@@ -14,26 +14,12 @@ const RangeQuestion = ({ stepConfig, currStep }: RangeQuestionProps) => {
   const { advance } = useQuestionnaireStore();
 
   const max =
-    (
-      currStep as Extract<
-        GetStepQuery["questionnaireSteps"][number],
-        { __typename: "RangeQuestion" }
-      >
-    ).max ?? 10;
+    (currStep as Extract<CurrStep, { __typename: "RangeQuestion" }>).max ?? 10;
 
   const min =
-    (
-      currStep as Extract<
-        GetStepQuery["questionnaireSteps"][number],
-        { __typename: "RangeQuestion" }
-      >
-    ).min ?? 0;
-  const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "RangeQuestion" }
-    >
-  ).hint;
+    (currStep as Extract<CurrStep, { __typename: "RangeQuestion" }>).min ?? 0;
+  const hint = (currStep as Extract<CurrStep, { __typename: "RangeQuestion" }>)
+    .hint;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

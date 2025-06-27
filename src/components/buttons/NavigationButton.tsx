@@ -2,17 +2,19 @@ import { constant } from "../../styles/constants";
 
 type NavigationButtonProps = React.PropsWithChildren<{
   variant?: "primary" | "secondary";
-  isFull: boolean;
+  isFull?: boolean;
   disabled?: boolean;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
-}>;
+}> &
+  React.HTMLAttributes<HTMLDivElement>;
 
 const NavigationButton = ({
   variant = "primary",
-  isFull,
+  isFull = false,
   disabled = false,
   onClick,
   children,
+  ...props
 }: NavigationButtonProps) => {
   const commonProps: React.HTMLAttributes<HTMLDivElement> = {
     onClick: disabled ? undefined : onClick,
@@ -33,6 +35,7 @@ const NavigationButton = ({
     return (
       <div
         {...commonProps}
+        {...props}
         style={{
           flex: 1,
           height: "60px",
@@ -42,6 +45,7 @@ const NavigationButton = ({
           fontWeight: 200,
           borderRadius: 0,
           ...commonProps.style,
+          ...props.style,
         }}
       >
         {children}
@@ -52,6 +56,7 @@ const NavigationButton = ({
   return (
     <div
       {...commonProps}
+      {...props}
       style={{
         width: "200px",
         height: "48px",
@@ -61,6 +66,7 @@ const NavigationButton = ({
         fontWeight: 200,
         borderRadius: "8px",
         ...commonProps.style,
+        ...props.style,
       }}
     >
       {children}

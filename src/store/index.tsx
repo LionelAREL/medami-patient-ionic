@@ -75,7 +75,12 @@ export type CurrStep =
   | GetStepQuery["questionnaireSteps"][number]
   | null
   | { __typename: "NotFoundStep"; id: string }
-  | { __typename: "DoctorSelectionStep"; id: string }
+  | {
+      __typename: "DoctorSelectionStep";
+      id: string;
+      doctors: Array<Doctor>;
+      onPickDoctor: () => void;
+    }
   | { __typename: "ThanksStep"; id: string };
 
 export type State = {
@@ -166,6 +171,8 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     if (!firstStepId) {
       set((state) => ({
         currStep: { __typename: "NotFoundStep", id: "NOT_FOUND" },
+      }));
+      set((state) => ({
         child: <Child state={state} />,
       }));
       return;
@@ -212,9 +219,23 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       get()?.reset();
     }
   },
-  openDoctorSelection: () => {
+  openDoctorSelection: (doctors, nexStepId) => {
+    set(() => ({
+      currStep: {
+        __typename: "DoctorSelectionStep",
+        id: "DOCTOR_SELECTION",
+        doctors,
+        onPickDoctor: () => {
+          try {
+            get().openStep(nexStepId);
+          } catch (e) {
+            get().reset();
+          }
+        },
+      },
+      isLoading: false,
+    }));
     set((state) => ({
-      currStep: { __typename: "DoctorSelectionStep", id: "DOCTOR_SELECTION" },
       child: <Child state={state} />,
       isLoading: false,
     }));
@@ -312,7 +333,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     // Important to keep child creation even for non visible widget such as Interview because it holds configuration such as innerSteps count
     // @todo consider using null instead for non visible widgets
-    console.log("2");
     set((state) => ({ child: <Child state={state} /> }));
 
     if (get().currStep?.__typename === "QuestionnaireInterview") {
@@ -348,7 +368,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
   },
   openInnerStep: async (substep) => {
     set(() => ({ currSubStep: substep }));
-    console.log("3");
     set((state) => ({
       child: <Child state={state} />,
       isLoading: false,

@@ -8,6 +8,8 @@ import NotFoundImage from "./../assets/images/404.svg";
 import SuccessImage from "./../assets/images/success.svg";
 import WelcomeImage from "./../assets/images/home_visual.svg";
 import ThirdPartyImage from "./../assets/images/third_party.svg";
+import AppointmentDateImage from "./../assets/images/appointment.svg";
+import IdentityImage from "./../assets/images/identity.svg";
 import RadioQuestion from "./steps/RadioQuestion";
 import ThanksStep from "./steps/ThanksStep";
 import TextQuestion from "./steps/TextQuestion";
@@ -19,17 +21,35 @@ import ConditionalStep from "./steps/ConditionalStep";
 import InfoStep from "./steps/InfoStep";
 import { getStepConfig } from "../utils/save/stepConfig";
 import { useEffect } from "react";
+import DoctorSelectorStep from "./steps/DoctorSelectorStep";
+import AppointmentDateStep from "./steps/AppointmentDateStep";
+import DateQuestion from "./steps/DateQuestion";
+import MenuStep from "./steps/MenuStep";
+import IdentityStep from "./steps/identity/IdentityStep";
+import { getInnerStep } from "./steps/identity/IdentityHelpers";
 
 type ChildProps = {
   state: State;
 };
 
 const Child = ({ state }: ChildProps) => {
-  const stepConfig = getStepConfig(state.currStep);
+  const stepConfig = getStepConfig(
+    state.currSubStep ?? 1,
+    state.currStep,
+    state.stepConfig,
+    state.formValues
+  );
   const setState = useQuestionnaireStore.setState;
 
   useEffect(() => {
-    setState({ stepConfig: getStepConfig(state.currStep) });
+    setState({
+      stepConfig: getStepConfig(
+        state.currSubStep ?? 1,
+        state.currStep,
+        state.stepConfig,
+        state.formValues
+      ),
+    });
   }, [state.currStep]);
 
   switch (state.currStep?.__typename) {
@@ -64,44 +84,48 @@ const Child = ({ state }: ChildProps) => {
         </QuestionWrapper>
       );
     }
+    case "DoctorSelectionStep": {
+      return (
+        <DoctorSelectorStep currStep={state.currStep} stepConfig={stepConfig} />
+      );
+    }
 
-    // case 'QuestionnaireAppointmentDate':
-    //   return <AppointmentDateStep advance={advance} />
-    //   break
+    case "QuestionnaireAppointmentDate": {
+      return (
+        <QuestionWrapper image={AppointmentDateImage}>
+          {(form) => (
+            <AppointmentDateStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
-    // case 'QuestionnaireIdentity': {
-    //   const identity = currStep
-    //   return (
-    //     <IdentityStep
-    //       substep={0}
-    //       step={identity}
-    //       advance={advance}
-    //       form={formKey}
-    //       isThirdParty={isThirdParty}
-    //       sessionId={sessionId}
-    //       gql={gql}
-    //       showToast={showToast}
-    //       withAuthentication={!isThirdParty && (identity.withAuthentication ?? true)}
-    //       switchToInscription={switchToInscription}
-    //       setAuthentication={setAuthentication}
-    //       patientId={authToken?.sub}
-    //     />
-    //   )
-    //   break
-    // }
+    case "QuestionnaireIdentity": {
+      const subStep = state.currSubStep ?? 1;
+      return (
+        <QuestionWrapper image={IdentityImage}>
+          {(form) => (
+            <IdentityStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+              formValues={state.formValues}
+              subStep={subStep}
+            />
+          )}
+        </QuestionWrapper>
+      );
+    }
 
     case "QuestionnaireInterview":
       return null;
 
-    // case 'QuestionnaireMenu':
-    //   return (
-    //     <MenuStep
-    //       step={currStep}
-    //       advance={advance}
-    //       form={formKey}
-    //     />
-    //   )
-    //   break
+    case "QuestionnaireMenu":
+      return <MenuStep currStep={state.currStep} stepConfig={stepConfig} />;
 
     // case 'QuestionnaireSelectMenu':
     //   return (
@@ -201,9 +225,18 @@ const Child = ({ state }: ChildProps) => {
         </QuestionWrapper>
       );
 
-    // case 'DateQuestion':
-    //   return <DateStep step={currStep} advance={advance} />
-    //   break
+    case "DateQuestion":
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <DateQuestion
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+            />
+          )}
+        </QuestionWrapper>
+      );
 
     // case 'QuestionnaireAi':
     //   return (

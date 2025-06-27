@@ -12,10 +12,7 @@ type WelcomeStepProps = {
 const WelcomeStep = ({ currStep }: WelcomeStepProps) => {
   const { doctor } = useQuestionnaireStore();
   const text = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "QuestionnaireWelcomeStep" }
-    >
+    currStep as Extract<CurrStep, { __typename: "QuestionnaireWelcomeStep" }>
   ).text
     ?.replace("{{firstName}}", doctor!.firstName)
     .replace("{{lastName}}", doctor!.lastName);

@@ -6,6 +6,7 @@ import frFR from "antd/locale/fr_FR";
 import "./styles/antdCustom.css";
 import { ConfigProvider } from "antd";
 import { theme } from "./styles/antdTheme";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);

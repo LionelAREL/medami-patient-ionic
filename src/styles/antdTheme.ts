@@ -12,6 +12,9 @@ export const theme: ThemeConfig = {
     fontFamily: constant.textInputStyle.fontFamily,
     fontSize: constant.textInputStyle.fontSize,
     colorTextPlaceholder: constant.placeholderColor,
+    colorText: constant.primaryColor,
+
+    colorTextSecondary: constant.placeholderColor,
   },
   components: {
     Button: {

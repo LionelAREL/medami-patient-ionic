@@ -10,17 +10,10 @@ type TextQuestionProps = {
 };
 
 const TextQuestion = ({ stepConfig, currStep }: TextQuestionProps) => {
-  const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "TextQuestion" }
-    >
-  ).hint;
+  const hint = (currStep as Extract<CurrStep, { __typename: "TextQuestion" }>)
+    .hint;
   const placeholder = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "TextQuestion" }
-    >
+    currStep as Extract<CurrStep, { __typename: "TextQuestion" }>
   ).placeholder;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -1,11 +1,27 @@
+import {
+  getInnerStep,
+  getInnerSteps,
+  IdentitySubStepLabel,
+} from "../../components/steps/identity/IdentityHelpers";
 import { State, StepConfig } from "../../store";
 
 export const getStepConfig = (
-  currStep: State["currStep"]
+  subStep: number,
+  currStep: State["currStep"],
+  stepConfig: StepConfig | null,
+  form: Record<string, unknown>
 ): StepConfig | null => {
   if (!currStep) return null;
 
   switch (currStep.__typename) {
+    case "DoctorSelectionStep":
+      return {
+        persist: false,
+        fieldName: "",
+        innerSteps: 1,
+        isRequired: false,
+        stepName: "Doctor",
+      };
     case "QuestionnaireWelcomeStep":
       return {
         persist: false,
@@ -85,6 +101,47 @@ export const getStepConfig = (
         innerSteps: 1,
         isRequired: true,
         stepName: "Thirdparty",
+      };
+    case "QuestionnaireAppointmentDate":
+      return {
+        persist: true,
+        fieldName: "appointmentDate",
+        innerSteps: 1,
+        isRequired: false,
+        stepName: "Date",
+      };
+    case "DateQuestion":
+      return {
+        persist: true,
+        fieldName: currStep.field ?? currStep.id,
+        innerSteps: 1,
+        isRequired: true,
+        stepName: "Date Input",
+      };
+    case "QuestionnaireMenu":
+      return {
+        persist: true,
+        fieldName: currStep.id,
+        innerSteps: 1,
+        isRequired: true,
+        stepName: "Menu",
+      };
+    case "QuestionnaireIdentity":
+      const innerSteps = getInnerSteps(currStep, form);
+      const innerStep = getInnerStep(subStep, stepConfig, currStep, form);
+      console.log({
+        persist: true,
+        fieldName: innerStep,
+        innerSteps,
+        isRequired: false,
+        stepName: IdentitySubStepLabel[innerStep],
+      });
+      return {
+        persist: true,
+        fieldName: innerStep,
+        innerSteps,
+        isRequired: false,
+        stepName: IdentitySubStepLabel[innerStep],
       };
 
     default:

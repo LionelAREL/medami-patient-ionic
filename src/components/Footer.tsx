@@ -11,6 +11,9 @@ const Footer = () => {
   if (currStep?.__typename === "NotFoundStep") {
     return null;
   }
+  if (currStep?.__typename === "DoctorSelectionStep") {
+    return null;
+  }
 
   if (currStep?.__typename === "QuestionnaireWelcomeStep") {
     return (

@@ -22,20 +22,14 @@ const CheckboxQuestion = ({
   };
 
   const options = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "CheckboxQuestion" }
-    >
+    currStep as Extract<CurrStep, { __typename: "CheckboxQuestion" }>
   ).choices.map((choice) => ({
     label: choice.label,
     value: choice.label,
   }));
 
   const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "CheckboxQuestion" }
-    >
+    currStep as Extract<CurrStep, { __typename: "CheckboxQuestion" }>
   ).hint;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

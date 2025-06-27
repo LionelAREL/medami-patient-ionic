@@ -37,16 +37,10 @@ const InfoStep = ({ currStep }: InfoStepProps) => {
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [email, setEmail] = useState("");
   const isReceiveByEmail = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "QuestionnaireInfoStep" }
-    >
+    currStep as Extract<CurrStep, { __typename: "QuestionnaireInfoStep" }>
   ).showReceiveByEmail;
   const text = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "QuestionnaireInfoStep" }
-    >
+    currStep as Extract<CurrStep, { __typename: "QuestionnaireInfoStep" }>
   ).text
     ?.replace("{{firstName}}", doctor?.firstName ?? "")
     .replace("{{lastName}}", doctor?.lastName ?? "")
@@ -87,12 +81,14 @@ const InfoStep = ({ currStep }: InfoStepProps) => {
             width: "90vw",
             maxWidth: "400px",
             height: "calc(100vh - 550px)",
+            maxHeight: "min-content",
           }}
         >
           <div
             style={{
               ...constant.textInputStyle,
-              height: "100%",
+              height: "min-content",
+              maxHeight: "100%",
               display: "flex",
               flexDirection: "column",
             }}
@@ -132,6 +128,7 @@ const InfoStep = ({ currStep }: InfoStepProps) => {
                       <Input
                         placeholder="mon@email.com"
                         value={email}
+                        variant="underlined"
                         onChange={(e) => {
                           setEmail(e.target.value);
                         }}

@@ -12,20 +12,13 @@ type SelectQuestionProps = {
 const SelectQuestion = ({ stepConfig, currStep }: SelectQuestionProps) => {
   const { advance } = useQuestionnaireStore();
   const options = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "SelectQuestion" }
-    >
+    currStep as Extract<CurrStep, { __typename: "SelectQuestion" }>
   ).choices.map((choice) => ({
     label: choice.label,
     value: choice.label,
   }));
-  const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "SelectQuestion" }
-    >
-  ).hint;
+  const hint = (currStep as Extract<CurrStep, { __typename: "SelectQuestion" }>)
+    .hint;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Label>{hint}</Label>

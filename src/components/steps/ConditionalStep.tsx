@@ -13,10 +13,7 @@ type ConditionalStepProps = {
 const ConditionalStep = ({ currStep, stepConfig }: ConditionalStepProps) => {
   const { advance } = useQuestionnaireStore();
   const hint = (
-    currStep as Extract<
-      GetStepQuery["questionnaireSteps"][number],
-      { __typename: "QuestionnaireCondition" }
-    >
+    currStep as Extract<CurrStep, { __typename: "QuestionnaireCondition" }>
   ).hint;
   return (
     <div

@@ -1,6 +1,6 @@
 import React from "react";
 import { constant } from "../../styles/constants";
-import H1 from "../common/H1";
+import Title from "../common/Title";
 
 const ThanksStep = () => {
   return (
@@ -11,7 +11,9 @@ const ThanksStep = () => {
         ...constant.textInputStyle,
       }}
     >
-      <H1 style={{ alignSelf: "center", marginBottom: 20 }}>Merci !</H1>
+      <Title type="h2" style={{ alignSelf: "center", marginBottom: 20 }}>
+        Merci !
+      </Title>
       <div>
         Le questionnaire prendra fin automatiquement dans quelques secondes
       </div>
