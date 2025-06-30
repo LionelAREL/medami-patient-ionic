@@ -19,7 +19,7 @@ const QuestionWrapper = ({
   children,
   isExpandLogo = false,
 }: QuestionWrapperProps) => {
-  const { formValues, setFormValues } = useQuestionnaireStore();
+  const { formValues, setFormValues, setForm } = useQuestionnaireStore();
   const isMobile = useFitsIn(Display.MOBILE);
   const width = useStepImageWidth();
 
@@ -28,6 +28,9 @@ const QuestionWrapper = ({
   useEffect(() => {
     form.setFieldsValue(formValues);
   }, []);
+  useEffect(() => {
+    setForm(form);
+  }, [form]);
 
   return (
     <div
@@ -55,7 +58,7 @@ const QuestionWrapper = ({
           <Form
             form={form}
             onValuesChange={(values) => {
-              console.log("onValuesChange", values);
+              // console.log("onValuesChange", values);
               setFormValues(values);
             }}
           >

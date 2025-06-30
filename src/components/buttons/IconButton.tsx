@@ -1,22 +1,17 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faUserGroup } from "@fortawesome/free-solid-svg-icons";
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { constant } from "../../styles/constants";
 
-type ThirdPartyButtonProps = {
-  variant?: "me" | "other";
+type IconbuttonProps = React.PropsWithChildren<{
+  icon: IconDefinition;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   selected: boolean;
-};
+}>;
 
-const ThirdPartyButton = ({
-  variant = "me",
-  onClick,
-  selected,
-}: ThirdPartyButtonProps) => {
+const IconButton = ({ icon, onClick, selected, children }: IconbuttonProps) => {
   const [hover, setHover] = useState(false);
 
-  const isMe = variant === "me";
   const color =
     selected || hover ? constant.primaryColor : constant.secondaryColor;
 
@@ -34,11 +29,7 @@ const ThirdPartyButton = ({
         cursor: "pointer",
       }}
     >
-      <FontAwesomeIcon
-        icon={isMe ? faUser : faUserGroup}
-        size="2xl"
-        color={color}
-      />
+      <FontAwesomeIcon icon={icon} size="2xl" color={color} />
       <div
         style={{
           color,
@@ -46,10 +37,10 @@ const ThirdPartyButton = ({
           transition: "font-size 0.2s ease",
         }}
       >
-        {isMe ? "Moi" : "Quelqu’un d’autre"}
+        {children}
       </div>
     </div>
   );
 };
 
-export default ThirdPartyButton;
+export default IconButton;

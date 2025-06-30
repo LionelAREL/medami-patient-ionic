@@ -1,38 +1,52 @@
-import { faUser, faUserGroup } from "@fortawesome/free-solid-svg-icons";
+import {
+  faMars,
+  faVenus,
+  faVenusMars,
+} from "@fortawesome/free-solid-svg-icons";
 import { useQuestionnaireStore } from "../../store";
 import IconButton from "../buttons/IconButton";
 
-type ThirdPartySelectorProps = {
+type GenderSelectorProps = {
   value?: string;
   onChange?: (val: string) => void;
 };
 
-const ThirdPartySelector = ({ value, onChange }: ThirdPartySelectorProps) => {
+const GenderSelector = ({ value, onChange }: GenderSelectorProps) => {
   const { advance } = useQuestionnaireStore();
   return (
     <div style={{ display: "flex", justifyContent: "space-around" }}>
       <IconButton
-        icon={faUser}
+        icon={faMars}
         onClick={() => {
-          onChange?.("me");
+          onChange?.("male");
           advance();
         }}
-        selected={value === "me"}
+        selected={value === "male"}
       >
-        Moi
+        Un homme
       </IconButton>
       <IconButton
-        icon={faUserGroup}
+        icon={faVenus}
+        onClick={() => {
+          onChange?.("female");
+          advance();
+        }}
+        selected={value === "female"}
+      >
+        Une femme
+      </IconButton>
+      <IconButton
+        icon={faVenusMars}
         onClick={() => {
           onChange?.("other");
           advance();
         }}
         selected={value === "other"}
       >
-        Quelqu’un d’autre
+        Autre
       </IconButton>
     </div>
   );
 };
 
-export default ThirdPartySelector;
+export default GenderSelector;

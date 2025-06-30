@@ -77,7 +77,6 @@ export const getFields = (
 
 export const getInnerStep = (
   subStep: number,
-  stepConfig: StepConfig | null,
   currStep: CurrStep,
   form: Record<string, unknown>
 ): IdentitySubStep => {
@@ -87,8 +86,6 @@ export const getInnerStep = (
 
   const fields = getFields(currStep, form);
   const isConnection = !!form["isConnection"];
-  console.log("isConnection");
-  console.log(isConnection);
 
   if (!withAuthentication) {
     return identityFieldToSubStep[fields[subStep - 1]];
@@ -101,7 +98,7 @@ export const getInnerStep = (
   if (isConnection) {
     return IdentitySubStep.SignIn;
   } else {
-    if (subStep == stepConfig?.innerSteps) {
+    if (subStep == getInnerSteps(currStep, form)) {
       return IdentitySubStep.SignUp;
     } else {
       return identityFieldToSubStep[fields[subStep - 2]];
@@ -129,4 +126,21 @@ export const getInnerSteps = (
   } else {
     return fields.length;
   }
+};
+
+export const getIdentityIsRequired = (innerStep: IdentitySubStep) => {
+  const isRequiredSubFields: IdentitySubStep[] = [
+    IdentitySubStep.AuthenticationChoice,
+    IdentitySubStep.FirstName,
+    IdentitySubStep.LastName,
+    IdentitySubStep.BirthName,
+    IdentitySubStep.Gender,
+    IdentitySubStep.Birthdate,
+  ];
+
+  if (isRequiredSubFields.includes(innerStep)) {
+    return true;
+  }
+
+  return false;
 };

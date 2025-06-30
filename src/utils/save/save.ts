@@ -8,12 +8,10 @@ import { Answer } from "../../graphql/queries/interview.graphql";
 import dayjs from "dayjs";
 
 export const commonSave = async (state: State) => {
-  console.log(state);
   if (!state.stepConfig?.persist) {
     return;
   }
 
-  // récupérer les values du form grace au fieldName
   console.log("Voici le form au save: ", state.formValues);
   console.log(
     "Voici la value à save: ",
@@ -39,7 +37,6 @@ export const commonSave = async (state: State) => {
   });
 
   if (answerErrors?.length !== 0) {
-    // throw "An error occured saving response"
   }
 };
 

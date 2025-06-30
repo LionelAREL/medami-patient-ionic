@@ -6,6 +6,9 @@ import { IdentityField } from "../../../graphql/generated/graphql";
 import { getFields, getInnerStep, IdentitySubStep } from "./IdentityHelpers";
 import NavigationButton from "../../buttons/NavigationButton";
 import TextStyle from "../../common/Text";
+import SelectDate from "../../form/SelectDate";
+import GenderSelector from "../../form/GenderSelector";
+import IdentityAuthForm from "./IdentityAuthForm";
 
 type IdentityStepProps = {
   form: FormInstance<unknown> | undefined;
@@ -22,12 +25,10 @@ const IdentityStep = ({
   subStep,
   formValues,
 }: IdentityStepProps) => {
-  const { advance } = useQuestionnaireStore();
+  const { advance, openInnerStep, isThirdParty } = useQuestionnaireStore();
   const setState = useQuestionnaireStore.setState;
 
-  const fields = getFields(currStep, formValues);
-
-  const innerStep = getInnerStep(subStep, stepConfig, currStep, formValues);
+  const innerStep = getInnerStep(subStep, currStep, formValues);
 
   switch (innerStep) {
     case IdentitySubStep.AuthenticationChoice:
@@ -57,7 +58,7 @@ const IdentityStep = ({
                     isConnection: true,
                   },
                 }));
-                advance();
+                advance(true);
               }}
             >
               Oui, je suis déjà venu
@@ -77,7 +78,7 @@ const IdentityStep = ({
                     isConnection: false,
                   },
                 }));
-                advance();
+                advance(true);
               }}
             >
               Non, c'est ma première fois
@@ -88,29 +89,222 @@ const IdentityStep = ({
     case IdentitySubStep.FirstName:
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Label>Quel est votre prénom ?</Label>
+          <Label>
+            {isThirdParty
+              ? "Quel est le prénom de la personne suivie ?"
+              : "Quel est votre prénom ?"}
+          </Label>
           <Form.Item name={stepConfig?.fieldName}>
-            <Input variant="underlined" placeholder={"Prénom"} />
+            <Input
+              variant="underlined"
+              placeholder={"Prénom"}
+              onPressEnter={() => advance()}
+            />
           </Form.Item>
         </div>
       );
     case IdentitySubStep.LastName:
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Label>Quel est votre nom de famille ?</Label>
+          <Label>
+            {isThirdParty
+              ? "Quel est le nom de famille de la personne suivie ?"
+              : "Quel est votre nom de famille ?"}
+          </Label>
           <Form.Item name={stepConfig?.fieldName}>
-            <Input variant="underlined" placeholder={"Nom de famille"} />
+            <Input
+              variant="underlined"
+              placeholder={"Nom de famille"}
+              onPressEnter={() => advance()}
+            />
           </Form.Item>
         </div>
       );
-    case IdentitySubStep.LastName:
+    case IdentitySubStep.Birthdate:
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Label>Quel est votre nom de famille ?</Label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <Label>
+            {isThirdParty
+              ? "Quelle est la date de naissance de la personne suivie ?"
+              : "Quelle est votre date de naissance ?"}
+          </Label>
           <Form.Item name={stepConfig?.fieldName}>
-            <Input variant="underlined" placeholder={"Nom de famille"} />
+            <SelectDate isAllYear={true} isDefaultDate={false} />
           </Form.Item>
         </div>
+      );
+    case IdentitySubStep.Gender:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <Label>{isThirdParty ? "La personne suivie est" : "Êtes vous"}</Label>
+          <Form.Item name={stepConfig?.fieldName}>
+            <GenderSelector />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.Phone:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quel est le numéro de téléphone de la personne suivie ?"
+              : "Quel est votre numéro de téléphone ?"}
+          </Label>
+          <Form.Item
+            name={stepConfig?.fieldName}
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (!value) {
+                    return Promise.resolve();
+                  }
+                  const regex = /^(?:07\d{8}|\+337\d{8})$/;
+                  return regex.test(value)
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error(
+                          "Veuillez renseigner un numéro de téléphone valide (0612345678 ou +33612345678)"
+                        )
+                      );
+                },
+              },
+            ]}
+          >
+            <Input
+              variant="underlined"
+              placeholder={"+33612345678 ou 0612345678"}
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.ContactEmail:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quel est l’email de la personne suivie ?"
+              : "Quel est votre email ?"}
+          </Label>
+          <Form.Item
+            name={stepConfig?.fieldName}
+            rules={[
+              {
+                type: "email",
+                message: "Veuillez entrer un email valide",
+              },
+            ]}
+          >
+            <Input
+              variant="underlined"
+              placeholder={"johndoe@email.com"}
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.PostalCode:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quelle est le code postale de la personne suivie ?"
+              : "Quelle est votre code postale ?"}
+          </Label>
+          <Form.Item
+            name={stepConfig?.fieldName}
+            rules={[
+              {
+                pattern: /^[0-9]{5}$/,
+                message: "Veuillez entrer un code postal valide (5 chiffres)",
+              },
+            ]}
+          >
+            <Input
+              variant="underlined"
+              placeholder={"31000"}
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.City:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quelle est la ville de résidence de la personne suivie ?"
+              : "Quelle est votre ville de résidence ?"}
+          </Label>
+          <Form.Item name={stepConfig?.fieldName}>
+            <Input
+              variant="underlined"
+              placeholder={"Toulouse"}
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.AdditionalAddressInfo:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quelle est l\'adresse complète de la personne suivie ?"
+              : "Quelle est votre adresse complète ?"}
+          </Label>
+          <Form.Item name={stepConfig?.fieldName}>
+            <Input
+              variant="underlined"
+              placeholder={
+                "8 avenue Victor Hugo, Résidence Les Jardins, Apt 34"
+              }
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.BirthName:
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Label>
+            {isThirdParty
+              ? "Quel est le nom de naissance de la personne suivie ?"
+              : "Quel est votre nom de naissance ?"}
+          </Label>
+          <Form.Item name={stepConfig?.fieldName}>
+            <Input
+              variant="underlined"
+              placeholder={"Nom de naissance"}
+              onPressEnter={() => advance()}
+            />
+          </Form.Item>
+        </div>
+      );
+    case IdentitySubStep.SignIn:
+      return (
+        <IdentityAuthForm
+          label="Saisissez les identifiants renseignés lors de votre dernière visite"
+          labelButton="Je n'ai pas / ne me rappelle pas de mes identifiants"
+          onClickButton={() => {
+            setState((state) => ({
+              formValues: { ...state.formValues, isConnection: false },
+            }));
+            openInnerStep(2);
+          }}
+          fieldName={stepConfig!.fieldName}
+        />
+      );
+    case IdentitySubStep.SignUp:
+      return (
+        <IdentityAuthForm
+          label="Afin de gagner du temps la prochaine fois, saisissez un email et un mot de passe"
+          labelButton="passer cette étape"
+          onClickButton={() => {
+            advance(true);
+          }}
+          fieldName={stepConfig!.fieldName}
+        />
       );
     default:
       return <div>{innerStep}</div>;

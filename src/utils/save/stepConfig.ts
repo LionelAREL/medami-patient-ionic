@@ -1,15 +1,29 @@
 import {
+  getIdentityIsRequired,
   getInnerStep,
   getInnerSteps,
+  IdentitySubStep,
   IdentitySubStepLabel,
 } from "../../components/steps/identity/IdentityHelpers";
-import { State, StepConfig } from "../../store";
+import {
+  addPatient,
+  signInPatient,
+  signUpPatient,
+} from "./../../graphql/queries/patient.graphql";
+import client from "../../graphql/client";
+import {
+  CurrStep,
+  State,
+  StepConfig,
+  useQuestionnaireStore,
+} from "../../store";
+import { IdentityField } from "../../graphql/generated/graphql";
+import { commonSave } from "./save";
 
 export const getStepConfig = (
   subStep: number,
   currStep: State["currStep"],
-  stepConfig: StepConfig | null,
-  form: Record<string, unknown>
+  formValues: Record<string, unknown>
 ): StepConfig | null => {
   if (!currStep) return null;
 
@@ -127,21 +141,96 @@ export const getStepConfig = (
         stepName: "Menu",
       };
     case "QuestionnaireIdentity":
-      const innerSteps = getInnerSteps(currStep, form);
-      const innerStep = getInnerStep(subStep, stepConfig, currStep, form);
-      console.log({
-        persist: true,
-        fieldName: innerStep,
-        innerSteps,
-        isRequired: false,
-        stepName: IdentitySubStepLabel[innerStep],
-      });
+      const innerSteps = getInnerSteps(currStep, formValues);
+      const innerStep = getInnerStep(subStep, currStep, formValues);
       return {
         persist: true,
         fieldName: innerStep,
         innerSteps,
-        isRequired: false,
+        isRequired: getIdentityIsRequired(innerStep),
         stepName: IdentitySubStepLabel[innerStep],
+        save: async (state) => {
+          const { formValues, currStep, currSubStep, form, stepConfig } = state;
+          const withAuthentication = (
+            currStep as Extract<
+              CurrStep,
+              { __typename: "QuestionnaireIdentity" }
+            >
+          ).withAuthentication;
+          const fields = (
+            currStep as Extract<
+              CurrStep,
+              { __typename: "QuestionnaireIdentity" }
+            >
+          ).fields;
+          if (
+            (withAuthentication &&
+              !formValues.isConnection &&
+              currSubStep == innerSteps - 1) ||
+            (!withAuthentication && currSubStep == fields?.length)
+          ) {
+            const identityVariables = fields?.reduce<
+              Partial<Record<IdentitySubStep, any>>
+            >((acc, field, i) => {
+              const innerStepId = i + (withAuthentication ? 2 : 1);
+              const innerStep = getInnerStep(innerStepId, currStep, formValues);
+              const key = innerStep;
+              const value = formValues[key];
+
+              acc[key] =
+                innerStep === IdentitySubStep.Gender ? String(value) : value;
+              return acc;
+            }, {});
+            const { errors: addPatientErrors } = await client.mutate({
+              mutation: addPatient,
+              variables: {
+                ...identityVariables,
+                session: state.sessionId,
+              },
+            });
+            if (addPatientErrors) {
+              console.log("errors patient");
+            }
+          }
+
+          if (
+            getInnerStep(currSubStep ?? 1, currStep, formValues) ==
+            IdentitySubStep.SignIn
+          ) {
+            const { errors: signInErrors } = await client.mutate({
+              mutation: signInPatient,
+              variables: {
+                email: form?.getFieldValue(`${stepConfig!.fieldName}Email`),
+                password: form?.getFieldValue(
+                  `${stepConfig!.fieldName}Password`
+                ),
+              },
+            });
+            if (signInErrors) {
+              console.log("errors signIn patient");
+            }
+          }
+
+          if (
+            getInnerStep(currSubStep ?? 1, currStep, formValues) ==
+            IdentitySubStep.SignUp
+          ) {
+            const { errors: signUpErrors } = await client.mutate({
+              mutation: signUpPatient,
+              variables: {
+                email: form?.getFieldValue(`${stepConfig!.fieldName}Email`),
+                password: form?.getFieldValue(
+                  `${stepConfig!.fieldName}Password`
+                ),
+              },
+            });
+            if (signUpErrors) {
+              console.log("errors signUp patient");
+            }
+          }
+
+          commonSave(state);
+        },
       };
 
     default:

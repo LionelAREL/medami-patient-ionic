@@ -1,5 +1,5 @@
 import { Form, FormInstance, Input } from "antd";
-import { CurrStep, StepConfig } from "../../store";
+import { CurrStep, StepConfig, useQuestionnaireStore } from "../../store";
 import { GetStepQuery } from "../../graphql/generated/graphql";
 import Label from "../common/Label";
 
@@ -10,6 +10,7 @@ type TextQuestionProps = {
 };
 
 const TextQuestion = ({ stepConfig, currStep }: TextQuestionProps) => {
+  const { advance } = useQuestionnaireStore();
   const hint = (currStep as Extract<CurrStep, { __typename: "TextQuestion" }>)
     .hint;
   const placeholder = (
@@ -19,7 +20,11 @@ const TextQuestion = ({ stepConfig, currStep }: TextQuestionProps) => {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Label>{hint}</Label>
       <Form.Item name={stepConfig?.fieldName}>
-        <Input variant="underlined" placeholder={placeholder ?? ""} />
+        <Input
+          variant="underlined"
+          placeholder={placeholder ?? ""}
+          onPressEnter={() => advance()}
+        />
       </Form.Item>
     </div>
   );

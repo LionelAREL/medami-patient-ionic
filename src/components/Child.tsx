@@ -36,7 +36,6 @@ const Child = ({ state }: ChildProps) => {
   const stepConfig = getStepConfig(
     state.currSubStep ?? 1,
     state.currStep,
-    state.stepConfig,
     state.formValues
   );
   const setState = useQuestionnaireStore.setState;
@@ -46,11 +45,10 @@ const Child = ({ state }: ChildProps) => {
       stepConfig: getStepConfig(
         state.currSubStep ?? 1,
         state.currStep,
-        state.stepConfig,
         state.formValues
       ),
     });
-  }, [state.currStep]);
+  }, [state.currStep, state.currSubStep, state.formValues]);
 
   switch (state.currStep?.__typename) {
     case "QuestionnaireWelcomeStep": {

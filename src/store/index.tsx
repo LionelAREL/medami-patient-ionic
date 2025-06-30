@@ -34,6 +34,7 @@ import { jwtDecode } from "jwt-decode";
 import { getQueryParam } from "../utils/queryParams";
 import Child from "../components/Child";
 import { commonSave } from "../utils/save/save";
+import { FormInstance } from "antd";
 
 type ClientJWTToken = {
   sid: string;
@@ -69,6 +70,7 @@ type StateValues = Omit<
   | "canAdvance"
   | "back"
   | "setFormValues"
+  | "setForm"
 >;
 
 export type CurrStep =
@@ -91,9 +93,10 @@ export type State = {
   advance: (skipSave?: boolean, skipLoadingCheck?: boolean) => Promise<void>;
   openInnerStep: (substep: number) => Promise<void>;
   close: () => Promise<void>;
-  canAdvance: () => boolean;
+  canAdvance: () => Promise<boolean>;
   back: () => Promise<void>;
   setFormValues: (values: Record<string, unknown>) => void;
+  setForm: (values: FormInstance<any>) => void;
 
   doctor: Doctor | null;
   sessionId: string | null;
@@ -114,6 +117,7 @@ export type State = {
   hasDoctorSelectionScreen: boolean;
   isReady: boolean;
   formValues: Record<string, unknown>;
+  form: FormInstance<any> | null;
 };
 
 const initialState: StateValues = {
@@ -136,6 +140,7 @@ const initialState: StateValues = {
   hasDoctorSelectionScreen: false,
   isReady: false,
   formValues: {},
+  form: null,
 };
 
 export const useQuestionnaireStore = create<State>((set, get) => ({
@@ -166,7 +171,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }
   },
   startWorkflow: async (firstStepId, doctors) => {
-    console.log("start workflow");
     set(() => ({ isReady: true }));
     if (!firstStepId) {
       set((state) => ({
@@ -243,7 +247,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
   openStep: async (stepId, substep = 1) => {
     const savedStep = get().currStep;
 
-    console.log("openStep");
     if (!get().sessionId) {
       const { data: createSessionData } =
         await client.mutate<CreateSessionMutation>({
@@ -382,12 +385,10 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     if (isLoading && !skipLoadingCheck) return;
 
-    // Form validation
-    if (!skipSave) {
-      // if (!formKey.currentState!.saveAndValidate()) {
-      //   console.error("Saisie invalide"); // ou votre toast
-      //   return;
-      // }
+    const canAdvance = await get().canAdvance();
+
+    if (!skipSave && !canAdvance) {
+      return;
     }
 
     if (!isLoading) {
@@ -399,8 +400,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     try {
       if (!skipSave) {
-        console.log("stepConfig");
-        console.log(stepConfig);
         await (stepConfig?.save?.(get()) ?? commonSave(get()));
       }
 
@@ -410,80 +409,78 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       // console.log(currSubStep, stepConfig?.innerSteps)
       if ((currSubStep ?? 0) < (stepConfig?.innerSteps ?? 0)) {
         await get().openInnerStep((currSubStep ?? 0) + 1);
-        return;
-      }
+      } else {
+        if (currStep?.__typename === "QuestionnaireSelectMenu") {
+          // If the previous step was an interview selector, then insert selected interviews before the next step
+          // @todo Find a way to handle this case on server side
+          set(() => ({ resumeToStep: currStep.id })); // Save this step to resume from it after all sub questionnaires have been completed
 
-      if (currStep?.__typename === "QuestionnaireSelectMenu") {
-        // If the previous step was an interview selector, then insert selected interviews before the next step
-        // @todo Find a way to handle this case on server side
-        set(() => ({ resumeToStep: currStep.id })); // Save this step to resume from it after all sub questionnaires have been completed
-
-        // const entries =
-        //   form.currentState!.value[stepConfig!.fieldName] as Array<{
-        //     questionnaires: Interview[];
-        //   }>;
-        // const interviews = Array.from(
-        //   new Set(entries.flatMap((e) => e.questionnaires))
-        // );
-        // set((s) => ({
-        //   nextInterviews: [...s.nextInterviews, ...interviews],
-        //   resumeToStep: s.currStep!.id,
-        // }));
-      }
-
-      if (!nextStepId && currStep) {
-        const { data: nextStepData, errors: nextStepErrors } =
-          await client.query<GetNextStepQuery>({
-            query: GetNextStep,
-            variables: { question: currStep.id, session: sessionId },
-          });
-        if (nextStepErrors?.length) {
-          set({ isLoading: false });
-          return;
+          // const entries =
+          //   form.currentState!.value[stepConfig!.fieldName] as Array<{
+          //     questionnaires: Interview[];
+          //   }>;
+          // const interviews = Array.from(
+          //   new Set(entries.flatMap((e) => e.questionnaires))
+          // );
+          // set((s) => ({
+          //   nextInterviews: [...s.nextInterviews, ...interviews],
+          //   resumeToStep: s.currStep!.id,
+          // }));
         }
-        nextStepId = nextStepData.nextStep!;
-      }
 
-      if (!nextStepId) {
-        // Special case when we are hitting the end of a subquestionnaire
-        // @todo this case should be handled on the backend but it actually does not know which questionnaires we want to travel from SelectMenuNode
-        if (get().nextInterviews.length !== 0) {
-          interviewToVisit = get().nextInterviews[0];
-          set((state) => ({
-            nextInterviews: state.nextInterviews.slice(1),
-          }));
-          nextStepId = interviewToVisit?.latest.firstStepId;
-        } else if (get().resumeToStep) {
-          console.log("resume to step ${resumeToStep}");
-          const rid = get().resumeToStep;
+        if (!nextStepId && currStep) {
           const { data: nextStepData, errors: nextStepErrors } =
             await client.query<GetNextStepQuery>({
               query: GetNextStep,
-              variables: { question: rid, session: sessionId! },
+              variables: { question: currStep.id, session: sessionId },
             });
           if (nextStepErrors?.length) {
             set({ isLoading: false });
             return;
           }
           nextStepId = nextStepData.nextStep!;
-          set({ resumeToStep: null });
         }
-      }
 
-      if (nextStepId) {
-        const opened = await get().openStep(nextStepId);
-        if (!opened) {
-          set({ isLoading: false });
-          return;
+        if (!nextStepId) {
+          // Special case when we are hitting the end of a subquestionnaire
+          // @todo this case should be handled on the backend but it actually does not know which questionnaires we want to travel from SelectMenuNode
+          if (get().nextInterviews.length !== 0) {
+            interviewToVisit = get().nextInterviews[0];
+            set((state) => ({
+              nextInterviews: state.nextInterviews.slice(0),
+            }));
+            nextStepId = interviewToVisit?.latest.firstStepId;
+          } else if (get().resumeToStep) {
+            console.log("resume to step ${resumeToStep}");
+            const rid = get().resumeToStep;
+            const { data: nextStepData, errors: nextStepErrors } =
+              await client.query<GetNextStepQuery>({
+                query: GetNextStep,
+                variables: { question: rid, session: sessionId! },
+              });
+            if (nextStepErrors?.length) {
+              set({ isLoading: false });
+              return;
+            }
+            nextStepId = nextStepData.nextStep!;
+            set({ resumeToStep: null });
+          }
         }
-      } else {
-        await get().close();
+
+        if (nextStepId) {
+          const opened = await get().openStep(nextStepId);
+          if (!opened) {
+            set({ isLoading: false });
+            return;
+          }
+        } else {
+          await get().close();
+        }
       }
     } catch (e) {
       console.error(e);
       // affichez un toast d’erreur ici si vous en avez un
       set({ isLoading: false });
-      return;
     }
 
     if (currStep && currStep.__typename !== "QuestionnaireInterview") {
@@ -521,7 +518,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     } catch {
       console.log("error on thirdPartySession");
     }
-    console.log("thanks");
     set(() => ({
       currStep: { __typename: "ThanksStep", id: "THANKS" },
     }));
@@ -534,9 +530,14 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
   },
   back: async () => {
     set(() => ({ transitionDirection: "backward" }));
-    const current = get().visitedSteps.pop();
+    const current = get().visitedSteps[get().visitedSteps.length - 1];
+
+    set((state) => ({
+      visitedSteps: state.visitedSteps.slice(0, -1),
+    }));
 
     if (get().visitedSteps.length === 0) {
+      console.log("reset !!");
       get().reset();
       return;
     }
@@ -547,7 +548,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
     if (
       current?.interview != null &&
-      newStep.interview?.id !== current.interview.id
+      newStep.interview?.id !== current.interview?.id
     ) {
       set((state) => ({
         nextInterviews: [current.interview!, ...state.nextInterviews],
@@ -565,16 +566,27 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       }
     }
   },
-  canAdvance: () => {
+  canAdvance: async () => {
+    try {
+      await get().form?.validateFields();
+    } catch (e) {
+      console.log("form errors", e);
+    }
+    const isFormValid = !(
+      get()
+        ?.form?.getFieldsError()
+        .some(({ errors }) => errors.length > 0) ?? false
+    );
     const canAdvance =
       !get().isLoading &&
       (!(get()?.stepConfig?.isRequired ?? false) ||
-        !!get().formValues[get().stepConfig!.fieldName]);
-    // console.log("canAdvance")
-    // console.log(canAdvance)
-    // console.log(get().isLoading, get()?.stepConfig)
+        !!get().formValues[get().stepConfig!.fieldName]) &&
+      isFormValid;
+    // console.log("canAdvance", get().formValues, get().stepConfig!.fieldName);
+    // console.log(canAdvance, isFormValid, get()?.form?.getFieldsError());
     return canAdvance;
   },
   setFormValues: (values) =>
     set((state) => ({ formValues: { ...state.formValues, ...values } })),
+  setForm: (form) => set({ form: form }),
 }));
