@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import NavigationButton from "./buttons/NavigationButton";
 import { Display, useFitsIn } from "../utils/hooks/useFitsIn";
 import { useQuestionnaireStore } from "../store";
+import TextStyle from "./common/Text";
 
 const Footer = () => {
   const isFull = useFitsIn(Display.TABLET);
@@ -40,16 +41,35 @@ const Footer = () => {
     right: 0,
     paddingBottom: isFull ? 0 : "60px",
   };
+
+  const legalMention = (
+    <TextStyle style={{ fontSize: 12, fontWeight: 400 }}>
+      En poursuivant, je m’engage à accepter les conditions générales
+    </TextStyle>
+  );
+
   if (currStep?.__typename === "QuestionnaireWelcomeStep") {
     return (
-      <div style={baseStyle}>
+      <div
+        style={{
+          ...baseStyle,
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 20,
+          paddingBottom: 10,
+        }}
+      >
+        {isFull && legalMention}
         <NavigationButton
+          key={3}
           variant="primary"
           isFull={isFull}
           onClick={() => advance()}
+          style={{ alignSelf: isFull ? "normal" : undefined, padding: 10 }}
         >
           Démarrer
         </NavigationButton>
+        {!isFull && legalMention}
       </div>
     );
   }
@@ -57,6 +77,7 @@ const Footer = () => {
     return (
       <div style={baseStyle}>
         <NavigationButton
+          key={4}
           variant="primary"
           isFull={isFull}
           onClick={() => advance()}
@@ -81,6 +102,7 @@ const Footer = () => {
       }}
     >
       <NavigationButton
+        key={1}
         variant="secondary"
         isFull={isFull}
         onClick={() => back()}
@@ -88,6 +110,7 @@ const Footer = () => {
         Retour
       </NavigationButton>
       <NavigationButton
+        key={2}
         isFull={isFull}
         disabled={!canAdvance}
         onClick={() => advance()}

@@ -50,10 +50,11 @@ const DoctorSelectorStep = ({ currStep }: DoctorSelectorStepProps) => {
       <ListChoice
         choices={choices}
         onPick={(choice) => {
+          const doctor = doctors.find((doctor) => doctor.id === choice.key);
           setState({
-            doctor: doctors.find((doctor) => doctor.id === choice.key),
+            doctor,
           });
-          onPickDoctor();
+          onPickDoctor(doctor!);
         }}
       />
     </div>

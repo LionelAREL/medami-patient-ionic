@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 /// <reference types="vitest" />
 
 import legacy from "@vitejs/plugin-legacy";
@@ -7,15 +8,23 @@ import graphqlLoader from "vite-plugin-graphql-loader";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), legacy(), graphqlLoader()],
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/setupTests.ts",
-  },
+  plugins: [
+    react(),
+    legacy(),
+    graphqlLoader(),
+    sentryVitePlugin({
+      org: "medami-47",
+      project: "patient",
+    }),
+  ],
+
   resolve: {
     alias: {
       "@": "/src",
     },
+  },
+
+  build: {
+    sourcemap: true,
   },
 });

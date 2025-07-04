@@ -26,7 +26,9 @@ import AppointmentDateStep from "./steps/AppointmentDateStep";
 import DateQuestion from "./steps/DateQuestion";
 import MenuStep from "./steps/MenuStep";
 import IdentityStep from "./steps/identity/IdentityStep";
-import { getInnerStep } from "./steps/identity/IdentityHelpers";
+import AiStep from "./steps/AiStep";
+import MenuSelectStep from "./steps/MenuSelectStep";
+import * as Sentry from "@sentry/react";
 
 type ChildProps = {
   state: State;
@@ -125,21 +127,11 @@ const Child = ({ state }: ChildProps) => {
     case "QuestionnaireMenu":
       return <MenuStep currStep={state.currStep} stepConfig={stepConfig} />;
 
-    // case 'QuestionnaireSelectMenu':
-    //   return (
-    //     <MenuSelectStep
-    //       step={currStep}
-    //       advance={advance}
-    //       sessionId={sessionId}
-    //       patientId={authToken?.sub}
-    //       gql={gql}
-    //     />
-    //   )
-    //   break
-
-    // case 'QuestionnaireSurvey':
-    //   return <SurveyStep />
-    //   break
+    case "QuestionnaireSelectMenu":
+      return (
+        <MenuSelectStep currStep={state.currStep} stepConfig={stepConfig} />
+      );
+      break;
 
     case "QuestionnaireThirdParty": {
       return (
@@ -236,17 +228,21 @@ const Child = ({ state }: ChildProps) => {
         </QuestionWrapper>
       );
 
-    // case 'QuestionnaireAi':
-    //   return (
-    //     <AiStep
-    //       step={currStep}
-    //       advance={advance}
-    //       substep={0}
-    //       setSubstep={setSubstep}
-    //       form={formKey}
-    //     />
-    //   )
-    //   break
+    case "QuestionnaireAi":
+      const subStep = state.currSubStep ?? 1;
+      return (
+        <QuestionWrapper image={QuestionImage}>
+          {(form) => (
+            <AiStep
+              currStep={state.currStep}
+              stepConfig={stepConfig}
+              form={form}
+              subStep={subStep}
+            />
+          )}
+        </QuestionWrapper>
+      );
+
     case "NotFoundStep":
       return (
         <QuestionWrapper image={NotFoundImage}>
@@ -260,6 +256,12 @@ const Child = ({ state }: ChildProps) => {
         </QuestionWrapper>
       );
     default:
+      const typename = state.currStep?.__typename ?? "unknown";
+
+      Sentry.captureMessage(`Unable to find block type: ${typename}`, {
+        level: "fatal",
+      });
+
       return (
         <QuestionWrapper>
           {() => <Box>Data : {JSON.stringify(state.currStep)}</Box>}

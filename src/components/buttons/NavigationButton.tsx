@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { easeInOut, motion } from "framer-motion";
 import { constant } from "../../styles/constants";
 
 type NavigationButtonProps = React.PropsWithChildren<{
@@ -5,6 +7,7 @@ type NavigationButtonProps = React.PropsWithChildren<{
   isFull?: boolean;
   disabled?: boolean;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  key?: string | number | undefined;
 }> &
   React.HTMLAttributes<HTMLDivElement>;
 
@@ -14,10 +17,15 @@ const NavigationButton = ({
   disabled = false,
   onClick,
   children,
+  key,
   ...props
 }: NavigationButtonProps) => {
-  const commonProps: React.HTMLAttributes<HTMLDivElement> = {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const commonProps = {
     onClick: disabled ? undefined : onClick,
+    onMouseEnter: () => setIsHovered(true),
+    onMouseLeave: () => setIsHovered(false),
     style: {
       cursor: disabled ? "default" : "pointer",
       color: variant === "secondary" ? constant.primaryColor : constant.white,
@@ -27,50 +35,36 @@ const NavigationButton = ({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      opacity: disabled ? 0.6 : 1,
+      opacity: disabled ? 0.6 : isHovered ? 0.8 : 1,
+      fontWeight: 400,
+      ...(isFull ? { flex: 1, height: "60px" } : {}),
     },
+    initial: { y: 50, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: 50, opacity: 0 },
+    transition: { duration: 0.3, easeInOut: "linear" },
   };
 
-  if (isFull) {
-    return (
-      <div
-        {...commonProps}
-        {...props}
-        style={{
-          flex: 1,
-          height: "60px",
-          fontSize: "24px",
-          fontStyle: "normal",
-          textAlign: "center",
-          fontWeight: 200,
-          borderRadius: 0,
-          ...commonProps.style,
-          ...props.style,
-        }}
-      >
-        {children}
-      </div>
-    );
-  }
+  const sharedStyle = {
+    fontSize: "24px",
+    fontStyle: "normal",
+    ...props.style,
+    ...commonProps.style,
+  };
 
   return (
-    <div
+    <motion.div
+      key={key}
       {...commonProps}
-      {...props}
       style={{
-        width: "200px",
+        width: !isFull ? "200px" : undefined,
         height: "48px",
-        fontSize: "24px",
-        fontStyle: "normal",
-        textAlign: "center",
-        fontWeight: 200,
-        borderRadius: "8px",
-        ...commonProps.style,
-        ...props.style,
+        borderRadius: isFull ? 0 : 8,
+        ...sharedStyle,
       }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
 

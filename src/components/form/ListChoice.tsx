@@ -28,8 +28,10 @@ const ListChoice = ({ choices, onPick }: ListChoiceProps) => {
         flexDirection: "column",
         padding: 0,
         overflow: "hidden",
-        width: "80%",
+        width: "99%",
         maxWidth: 450,
+        maxHeight: "calc(100vh - 350px)",
+        overflowY: "auto",
       }}
     >
       {choices.map((choice, index) => {

@@ -12,7 +12,10 @@ import {
 } from "./../graphql/queries/next_step.graphql";
 import { GetStep } from "./../graphql/queries/step.graphql";
 import { GetDoctor } from "./../graphql/queries/doctor.graphql";
-import { authPatient } from "./../graphql/queries/patient.graphql";
+import {
+  authPatient,
+  GetPatientName,
+} from "./../graphql/queries/patient.graphql";
 import client from "../graphql/client";
 import {
   AuthPatientMutation,
@@ -20,6 +23,7 @@ import {
   Doctor,
   GetDoctorQuery,
   GetNextStepQuery,
+  GetPatientNameQuery,
   Institution,
   InterviewFragment,
   QuestionnaireInterview,
@@ -35,10 +39,13 @@ import { getQueryParam } from "../utils/queryParams";
 import Child from "../components/Child";
 import { commonSave } from "../utils/save/save";
 import { FormInstance } from "antd";
+import * as amplitudeAnalytics from "./../utils/analytics/amplitude";
+import * as Sentry from "@sentry/react";
 
 type ClientJWTToken = {
   sid: string;
   aud: string;
+  sub: string;
 };
 
 export type StepConfig = {
@@ -81,15 +88,19 @@ export type CurrStep =
       __typename: "DoctorSelectionStep";
       id: string;
       doctors: Array<Doctor>;
-      onPickDoctor: () => void;
+      onPickDoctor: (doctor: Doctor) => void;
     }
   | { __typename: "ThanksStep"; id: string };
 
 export type State = {
-  reset: () => void;
+  reset: (failure?: boolean) => void;
   startWorkflow: (firstStepId: string | null, doctors: Array<Doctor>) => void;
   openDoctorSelection: (doctors: Array<Doctor>, nexStepId: string) => void;
-  openStep: (firstStepId: string, substep?: number) => Promise<boolean>;
+  openStep: (
+    firstStepId: string,
+    substep?: number,
+    track?: boolean
+  ) => Promise<boolean>;
   advance: (skipSave?: boolean, skipLoadingCheck?: boolean) => Promise<void>;
   openInnerStep: (substep: number) => Promise<void>;
   close: () => Promise<void>;
@@ -118,6 +129,8 @@ export type State = {
   isReady: boolean;
   formValues: Record<string, unknown>;
   form: FormInstance<any> | null;
+  firstName: string | null;
+  failureCount: number;
 };
 
 const initialState: StateValues = {
@@ -141,13 +154,36 @@ const initialState: StateValues = {
   isReady: false,
   formValues: {},
   form: null,
+  firstName: null,
+  failureCount: 0,
 };
 
 export const useQuestionnaireStore = create<State>((set, get) => ({
   ...initialState,
 
-  reset: async () => {
-    //@Todo Ajouter le systeme de failure
+  reset: async (failure = false) => {
+    if (failure) {
+      set((state) => ({ failureCount: state.failureCount + 1 }));
+      if (get().failureCount >= 3) {
+        set((state) => ({
+          currStep: { __typename: "NotFoundStep", id: "NOT_FOUND" },
+        }));
+        set((state) => ({
+          child: <Child state={state} />,
+        }));
+      }
+    }
+
+    amplitudeAnalytics.reset();
+    // amplitudeAnalytics.addUserProperties({
+    //   'sourceId': shortId,
+    //   'source': kIsWeb ? 'web' : 'tablet',
+    // });
+    // Sentry.setContext("source", {
+    //   sourceId: shortId,
+    //   source: kIsWeb ? "web" : "tablet",
+    // });
+    amplitudeAnalytics.log("Start");
 
     set(() => initialState);
 
@@ -169,8 +205,26 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     } catch {
       get().startWorkflow(null, []);
     }
+
+    if (!get().token) {
+      return;
+    }
+
+    const authToken = jwtDecode<ClientJWTToken>(get().token ?? "");
+    if (authToken.sid && authToken.sub) {
+      const { data: patientdata } = await client.query<GetPatientNameQuery>({
+        query: GetPatientName,
+        variables: { sessionId: authToken.sid },
+      });
+      set({ firstName: patientdata.patients?.[0].firstName });
+    }
   },
   startWorkflow: async (firstStepId, doctors) => {
+    amplitudeAnalytics.addUserProperties({
+      institution: get().institution?.name,
+    });
+    Sentry.setContext("institution", { institution: get().institution?.name });
+
     set(() => ({ isReady: true }));
     if (!firstStepId) {
       set((state) => ({
@@ -179,6 +233,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       set((state) => ({
         child: <Child state={state} />,
       }));
+      amplitudeAnalytics.log("Not found");
       return;
     }
 
@@ -193,6 +248,12 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
         variables: { id: doctorId },
       });
       set(() => ({ doctor: getDoctorData.doctors?.[0] as Doctor }));
+
+      amplitudeAnalytics.addUserProperties({
+        "doctor.id": get().doctor?.id,
+        "doctor.firstName": get().doctor?.firstName,
+        "doctor.lastName": get().doctor?.lastName,
+      });
 
       get().openStep(firstStepId);
       return;
@@ -216,24 +277,47 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       return;
     }
 
+    amplitudeAnalytics.addUserProperties({
+      "doctor.id": doctors?.[0].id,
+      "doctor.firstName": doctors?.[0].firstName,
+      "doctor.lastName": doctors?.[0].lastName,
+    });
+    Sentry.setContext("source", {
+      "doctor.id": doctors?.[0].id,
+      "doctor.firstName": doctors?.[0].firstName,
+      "doctor.lastName": doctors?.[0].lastName,
+    });
+
     set(() => ({ doctor: doctors?.[0] as Doctor }));
     try {
       get().openStep(firstStepId);
     } catch {
-      get()?.reset();
+      get()?.reset(true);
     }
   },
   openDoctorSelection: (doctors, nexStepId) => {
+    amplitudeAnalytics.log("Doctor Selection");
     set(() => ({
       currStep: {
         __typename: "DoctorSelectionStep",
         id: "DOCTOR_SELECTION",
         doctors,
-        onPickDoctor: () => {
+        onPickDoctor: (d: Doctor) => {
           try {
+            amplitudeAnalytics.addUserProperties({
+              "doctor.id": d.id,
+              "doctor.firstName": d.firstName,
+              "doctor.lastName": d.lastName,
+            });
+            Sentry.setContext("source", {
+              "doctor.id": d.id,
+              "doctor.firstName": d.firstName,
+              "doctor.lastName": d.lastName,
+            });
+
             get().openStep(nexStepId);
           } catch (e) {
-            get().reset();
+            get().reset(true);
           }
         },
       },
@@ -244,7 +328,7 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       isLoading: false,
     }));
   },
-  openStep: async (stepId, substep = 1) => {
+  openStep: async (stepId, substep = 1, track = false) => {
     const savedStep = get().currStep;
 
     if (!get().sessionId) {
@@ -289,7 +373,13 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     set(() => ({ currStep: getStepData.questionnaireSteps?.[0] }));
 
     if (!get().currStep) {
-      console.log("error no currStep");
+      Sentry.captureMessage("Unexpected null step", {
+        contexts: {
+          step: {
+            id: stepId,
+          },
+        },
+      });
       set(() => ({ currStep: savedStep }));
       return false;
     }
@@ -366,6 +456,13 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       return isOpenStepSuccess;
     }
 
+    if (track) {
+      amplitudeAnalytics.log("Open Step", {
+        step_name: get().stepConfig?.stepName,
+        count: get().visitedSteps.length + 1,
+      });
+    }
+
     set(() => ({ isLoading: false }));
     return true;
   },
@@ -375,10 +472,16 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       child: <Child state={state} />,
       isLoading: false,
     }));
+
+    amplitudeAnalytics.log("Open Step", {
+      step_name: get().stepConfig?.stepName,
+      count: get().visitedSteps.length + 1,
+    });
   },
   advance: async (skipSave = false, skipLoadingCheck = false) => {
     const { currStep, currSubStep, isLoading, sessionId, stepConfig } = get();
     if (currStep?.__typename === "ThanksStep") {
+      amplitudeAnalytics.log("End");
       get().reset();
       return;
     }
@@ -415,17 +518,23 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
           // @todo Find a way to handle this case on server side
           set(() => ({ resumeToStep: currStep.id })); // Save this step to resume from it after all sub questionnaires have been completed
 
-          // const entries =
-          //   form.currentState!.value[stepConfig!.fieldName] as Array<{
-          //     questionnaires: Interview[];
-          //   }>;
-          // const interviews = Array.from(
-          //   new Set(entries.flatMap((e) => e.questionnaires))
-          // );
-          // set((s) => ({
-          //   nextInterviews: [...s.nextInterviews, ...interviews],
-          //   resumeToStep: s.currStep!.id,
-          // }));
+          set((state) => ({
+            nextInterviews: [
+              ...state.nextInterviews,
+              ...(
+                state.formValues[currStep.id] as Extract<
+                  CurrStep,
+                  { __typename: "QuestionnaireSelectMenu" }
+                >["entries"]
+              )
+                .map((entry) => entry.questionnaires)
+                .flat()
+                .filter(
+                  (interview, index, self) =>
+                    self.findIndex((i) => i.id === interview.id) === index
+                ),
+            ],
+          }));
         }
 
         if (!nextStepId && currStep) {
@@ -447,7 +556,10 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
           if (get().nextInterviews.length !== 0) {
             interviewToVisit = get().nextInterviews[0];
             set((state) => ({
-              nextInterviews: state.nextInterviews.slice(0),
+              nextInterviews: state.nextInterviews.slice(
+                1,
+                state.nextInterviews.length
+              ),
             }));
             nextStepId = interviewToVisit?.latest.firstStepId;
           } else if (get().resumeToStep) {
@@ -478,8 +590,11 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
         }
       }
     } catch (e) {
+      Sentry.captureException(e);
       console.error(e);
+
       // affichez un toast d’erreur ici si vous en avez un
+
       set({ isLoading: false });
     }
 
@@ -498,6 +613,11 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }
   },
   close: async () => {
+    amplitudeAnalytics.log("Open Step", {
+      step_name: "Thanks",
+      count: get().visitedSteps.length + 1,
+    });
+
     const { sessionId } = get();
 
     client

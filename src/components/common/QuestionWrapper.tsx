@@ -51,7 +51,6 @@ const QuestionWrapper = ({
           style={{
             width: "90vw",
             maxWidth: "400px",
-            maxHeight: "calc(100vh - 550px)",
             overflowY: "auto",
           }}
         >

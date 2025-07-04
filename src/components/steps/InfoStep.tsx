@@ -80,8 +80,9 @@ const InfoStep = ({ currStep }: InfoStepProps) => {
           style={{
             width: "90vw",
             maxWidth: "400px",
-            height: "calc(100vh - 550px)",
+            height: "calc(100vh - 350px)",
             maxHeight: "min-content",
+            minHeight: "200px",
           }}
         >
           <div

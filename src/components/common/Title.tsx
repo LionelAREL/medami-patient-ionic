@@ -14,19 +14,21 @@ const Title = ({ children, type = "h1", ...props }: H1Props) => {
         fontWeight: 700,
         fontSize: 36,
       };
+      break;
     case "h2":
       style = {
         color: constant.primaryColor,
         fontWeight: 400,
         fontSize: 32,
       };
+      break;
   }
   return (
     <div
       style={{
-        ...style,
         padding: 0,
         margin: 0,
+        ...style,
         ...props.style,
       }}
     >

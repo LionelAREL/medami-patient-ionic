@@ -12,7 +12,7 @@ const ResponsiveImage = ({
 }: ResponsiveImageProps) => {
   return (
     <img
-      style={{ objectFit: "contain" }}
+      style={{ objectFit: "contain", ...props.style }}
       src={baseName ? `/images/${baseName}@1x.${extension}` : undefined}
       srcSet={
         baseName

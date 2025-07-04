@@ -9,6 +9,7 @@ import TextStyle from "../../common/Text";
 import SelectDate from "../../form/SelectDate";
 import GenderSelector from "../../form/GenderSelector";
 import IdentityAuthForm from "./IdentityAuthForm";
+import { useState } from "react";
 
 type IdentityStepProps = {
   form: FormInstance<unknown> | undefined;
@@ -27,14 +28,19 @@ const IdentityStep = ({
 }: IdentityStepProps) => {
   const { advance, openInnerStep, isThirdParty } = useQuestionnaireStore();
   const setState = useQuestionnaireStore.setState;
+  const [isHoveredConnected, setIsHoveredConnected] = useState(false);
+  const [isHoveredNotConnected, setIsHoveredNotConnected] = useState(false);
 
   const innerStep = getInnerStep(subStep, currStep, formValues);
 
   switch (innerStep) {
     case IdentitySubStep.AuthenticationChoice:
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Label>Avez vous déjà répondu à un questionnaire MedAmi ?</Label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <Label style={{ fontSize: 16, fontWeight: 600 }}>
+            Avez vous déjà répondu à un questionnaire MedAmi ?
+          </Label>
+          <Form.Item name={"isConnection"} style={{ padding: 0 }}></Form.Item>
           <div
             style={{
               display: "flex",
@@ -44,13 +50,15 @@ const IdentityStep = ({
               alignItems: "center",
             }}
           >
-            <Form.Item name={"isConnection"}></Form.Item>
             <NavigationButton
               style={{
                 padding: constant.paddingExtraSmall,
                 height: "auto",
                 fontSize: 14,
+                opacity: isHoveredConnected ? 0.8 : 1,
               }}
+              onMouseEnter={() => setIsHoveredConnected(true)}
+              onMouseLeave={() => setIsHoveredConnected(false)}
               onClick={() => {
                 setState((state) => ({
                   formValues: {
@@ -70,7 +78,10 @@ const IdentityStep = ({
                 padding: constant.paddingExtraSmall,
                 height: "auto",
                 fontSize: 14,
+                opacity: isHoveredNotConnected ? 0.8 : 1,
               }}
+              onMouseEnter={() => setIsHoveredNotConnected(true)}
+              onMouseLeave={() => setIsHoveredNotConnected(false)}
               onClick={() => {
                 setState((state) => ({
                   formValues: {

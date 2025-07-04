@@ -11,14 +11,9 @@ import {
   signUpPatient,
 } from "./../../graphql/queries/patient.graphql";
 import client from "../../graphql/client";
-import {
-  CurrStep,
-  State,
-  StepConfig,
-  useQuestionnaireStore,
-} from "../../store";
-import { IdentityField } from "../../graphql/generated/graphql";
+import { CurrStep, State, StepConfig } from "../../store";
 import { commonSave } from "./save";
+import { Answer } from "./../../graphql/queries/interview.graphql";
 
 export const getStepConfig = (
   subStep: number,
@@ -139,6 +134,54 @@ export const getStepConfig = (
         innerSteps: 1,
         isRequired: true,
         stepName: "Menu",
+      };
+    case "QuestionnaireAi":
+      return {
+        persist: true,
+        fieldName: currStep.id,
+        innerSteps: currStep.maxQuestions ?? 5,
+        isRequired: true,
+        stepName: "Ai",
+      };
+    case "QuestionnaireSelectMenu":
+      return {
+        persist: false,
+        fieldName: currStep.id,
+        innerSteps: 1,
+        isRequired: true,
+        stepName: "Menu Select",
+        save: async (state) => {
+          if (
+            (
+              state.currStep as Extract<
+                CurrStep,
+                { __typename: "QuestionnaireSelectMenu" }
+              >
+            ).field
+          ) {
+            client.mutate({
+              mutation: Answer,
+              variables: {
+                session: state.sessionId,
+                question: state.currStep?.id,
+                order: state.nextInterviews.length,
+                field: (
+                  state.currStep as Extract<
+                    CurrStep,
+                    { __typename: "QuestionnaireSelectMenu" }
+                  >
+                ).field,
+                values: (
+                  state.formValues[currStep.id] as Extract<
+                    CurrStep,
+                    { __typename: "QuestionnaireSelectMenu" }
+                  >["entries"]
+                ).map((entrie) => entrie.label),
+              },
+            });
+          }
+          commonSave(state);
+        },
       };
     case "QuestionnaireIdentity":
       const innerSteps = getInnerSteps(currStep, formValues);

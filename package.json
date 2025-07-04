@@ -13,6 +13,7 @@
     "format": "npx prettier --write ."
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.18.0",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@apollo/client": "^3.13.8",
     "@capacitor/android": "^7.4.0",
@@ -28,6 +29,8 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
+    "@sentry/react": "^9.34.0",
+    "@sentry/vite-plugin": "^3.5.0",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
     "antd": "^5.26.1",
@@ -55,6 +58,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/react": "^19.0.10",
     "@types/react-dom": "19.0.4",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-legacy": "^5.0.0",
     "@vitejs/plugin-react": "^4.0.1",
     "cypress": "^13.5.0",

@@ -1,8 +1,10 @@
-import React from "react";
 import { constant } from "../../styles/constants";
 import Title from "../common/Title";
+import { useQuestionnaireStore } from "../../store";
 
 const ThanksStep = () => {
+  const { isThirdParty, firstName } = useQuestionnaireStore();
+  const message = `Merci ${!isThirdParty ? (firstName ?? "!") : "!"}`;
   return (
     <div
       style={{
@@ -12,7 +14,7 @@ const ThanksStep = () => {
       }}
     >
       <Title type="h2" style={{ alignSelf: "center", marginBottom: 20 }}>
-        Merci !
+        {message}
       </Title>
       <div>
         Le questionnaire prendra fin automatiquement dans quelques secondes

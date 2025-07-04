@@ -8,11 +8,12 @@ import loadingAnimation from "../assets/lottie/loading.json";
 import Lottie from "lottie-react";
 
 const App = () => {
-  const { reset, isReady, transitionDirection } = useQuestionnaireStore();
+  const { reset, isReady } = useQuestionnaireStore();
 
   useEffect(() => {
     reset();
   }, []);
+
   if (!isReady) {
     return (
       <div
