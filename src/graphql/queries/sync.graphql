@@ -5,6 +5,12 @@ mutation Sync(
   $workflowId: ID!
   $deviceName: String!
 ) {
+  updateDevices(where: { serial: $serial }, update: { deleted: true }) {
+    devices {
+      serial
+    }
+  }
+
   createDevices(
     input: {
       serial: $serial

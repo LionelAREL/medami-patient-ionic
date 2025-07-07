@@ -1,7 +1,6 @@
-import { Form, FormInstance } from "antd";
+import { FormInstance } from "antd";
 import { CurrStep, StepConfig, useQuestionnaireStore } from "../../store";
-import Label from "../common/Label";
-import SelectDate from "../form/SelectDate";
+import loadingAnimation from "../../assets/lottie/loading.json";
 import { useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import { GetAiResponse } from "./../../graphql/queries/ai.graphql";
@@ -14,6 +13,7 @@ import ConditionalStep from "./ConditionalStep";
 import TextQuestion from "./TextQuestion";
 import DateQuestion from "./DateQuestion";
 import RadioQuestion from "./RadioQuestion";
+import Lottie from "lottie-react";
 
 type AiStepProps = {
   form: FormInstance<unknown> | undefined;
@@ -25,6 +25,7 @@ type AiStepProps = {
 const AiStep = ({ stepConfig, currStep, subStep, form }: AiStepProps) => {
   const setState = useQuestionnaireStore.setState;
   const { advance } = useQuestionnaireStore();
+
   const { id, maxQuestions } = currStep as Extract<
     CurrStep,
     { __typename: "QuestionnaireAi" }
@@ -54,14 +55,26 @@ const AiStep = ({ stepConfig, currStep, subStep, form }: AiStepProps) => {
     }
 
     if (data?.aiResponse?.type === AiResponseType.Finished) {
-      console.log("finished");
-      setState({ currSubStep: maxQuestions ?? 5 });
+      setState((state) => ({
+        stepConfig: {
+          ...(state.stepConfig as StepConfig),
+          innerSteps: subStep,
+        },
+      }));
       advance(true);
     }
   }, [data]);
 
-  if (loading) {
-    return <div>loading</div>;
+  if (loading || data?.aiResponse?.type === AiResponseType.Finished) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Lottie
+          animationData={loadingAnimation}
+          loop
+          style={{ width: 100, height: 100 }}
+        />
+      </div>
+    );
   }
 
   switch (data?.aiResponse?.type) {
@@ -133,8 +146,6 @@ const AiStep = ({ stepConfig, currStep, subStep, form }: AiStepProps) => {
           form={form}
         />
       );
-    case AiResponseType.Finished:
-      return <div></div>;
   }
 
   return (

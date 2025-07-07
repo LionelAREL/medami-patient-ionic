@@ -1,9 +1,12 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useQuestionnaireStore } from "../store";
+import { useKeyboardHeight } from "../utils/hooks/useKeyboardHeight";
 
 const Question = () => {
   const { currStep, currSubStep, child, transitionDirection } =
     useQuestionnaireStore();
+
+  const keyboardHeight = useKeyboardHeight();
 
   if (!child && !currStep) return null;
 
@@ -35,7 +38,7 @@ const Question = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
         style={{
           position: "absolute",
-          top: "50%",
+          top: `calc(50% - ${keyboardHeight / 2}px)`,
           left: "50%",
           padding: 20,
         }}

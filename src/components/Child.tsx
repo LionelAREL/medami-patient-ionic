@@ -8,6 +8,7 @@ import NotFoundImage from "./../assets/images/404.svg";
 import SuccessImage from "./../assets/images/success.svg";
 import WelcomeImage from "./../assets/images/home_visual.svg";
 import ThirdPartyImage from "./../assets/images/third_party.svg";
+import NoInternetImage from "./../assets/images/no_internet.svg";
 import AppointmentDateImage from "./../assets/images/appointment.svg";
 import IdentityImage from "./../assets/images/identity.svg";
 import RadioQuestion from "./steps/RadioQuestion";
@@ -29,6 +30,7 @@ import IdentityStep from "./steps/identity/IdentityStep";
 import AiStep from "./steps/AiStep";
 import MenuSelectStep from "./steps/MenuSelectStep";
 import * as Sentry from "@sentry/react";
+import NetworkErrorStep from "./steps/NetworkErrorStep";
 
 type ChildProps = {
   state: State;
@@ -247,6 +249,12 @@ const Child = ({ state }: ChildProps) => {
       return (
         <QuestionWrapper image={NotFoundImage}>
           {() => <NotFound />}
+        </QuestionWrapper>
+      );
+    case "NetworkErrorStep":
+      return (
+        <QuestionWrapper image={NoInternetImage}>
+          {() => <NetworkErrorStep />}
         </QuestionWrapper>
       );
     case "ThanksStep":

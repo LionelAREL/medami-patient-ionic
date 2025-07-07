@@ -57,7 +57,6 @@ const QuestionWrapper = ({
           <Form
             form={form}
             onValuesChange={(values) => {
-              // console.log("onValuesChange", values);
               setFormValues(values);
             }}
           >

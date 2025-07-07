@@ -1,7 +1,7 @@
 import { constant } from "../../styles/constants";
 
 type H1Props = React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>> & {
-  type?: "h1" | "h2";
+  type?: "h1" | "h2" | "h4";
 };
 
 const Title = ({ children, type = "h1", ...props }: H1Props) => {
@@ -20,6 +20,13 @@ const Title = ({ children, type = "h1", ...props }: H1Props) => {
         color: constant.primaryColor,
         fontWeight: 400,
         fontSize: 32,
+      };
+      break;
+    case "h4":
+      style = {
+        color: constant.primaryColor,
+        fontWeight: 600,
+        fontSize: 16,
       };
       break;
   }

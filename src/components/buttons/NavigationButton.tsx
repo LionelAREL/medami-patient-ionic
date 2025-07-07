@@ -7,7 +7,6 @@ type NavigationButtonProps = React.PropsWithChildren<{
   isFull?: boolean;
   disabled?: boolean;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
-  key?: string | number | undefined;
 }> &
   React.HTMLAttributes<HTMLDivElement>;
 
@@ -17,7 +16,6 @@ const NavigationButton = ({
   disabled = false,
   onClick,
   children,
-  key,
   ...props
 }: NavigationButtonProps) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -39,22 +37,21 @@ const NavigationButton = ({
       fontWeight: 400,
       ...(isFull ? { flex: 1, height: "60px" } : {}),
     },
-    initial: { y: 50, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { y: 50, opacity: 0 },
+    initial: { y: 50 },
+    animate: { y: 0 },
+    exit: { y: 50 },
     transition: { duration: 0.3, easeInOut: "linear" },
   };
 
   const sharedStyle = {
     fontSize: "24px",
     fontStyle: "normal",
-    ...props.style,
     ...commonProps.style,
+    ...props.style,
   };
 
   return (
     <motion.div
-      key={key}
       {...commonProps}
       style={{
         width: !isFull ? "200px" : undefined,

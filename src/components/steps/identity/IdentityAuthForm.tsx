@@ -3,6 +3,7 @@ import { Form, Input } from "antd";
 import Label from "../../common/Label";
 import { constant } from "../../../styles/constants";
 import Password from "antd/es/input/Password";
+import { useQuestionnaireStore } from "../../../store";
 
 type IdentityAuthFormProps = {
   fieldName: string;
@@ -17,12 +18,14 @@ const IdentityAuthForm = ({
   fieldName,
   onClickButton,
 }: IdentityAuthFormProps) => {
+  const { advance } = useQuestionnaireStore();
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Label>{label}</Label>
       <Form.Item
+        validateStatus="success"
         name={`${fieldName}Email`}
         rules={[
           {
@@ -35,9 +38,14 @@ const IdentityAuthForm = ({
           },
         ]}
       >
-        <Input variant="underlined" placeholder="Email" />
+        <Input
+          variant="underlined"
+          placeholder="Email"
+          onPressEnter={() => advance()}
+        />
       </Form.Item>
       <Form.Item
+        validateStatus="success"
         name={`${fieldName}Password`}
         rules={[
           {
@@ -51,7 +59,11 @@ const IdentityAuthForm = ({
           },
         ]}
       >
-        <Password variant="underlined" placeholder="Mot de passe" />
+        <Password
+          variant="underlined"
+          placeholder="Mot de passe"
+          onPressEnter={() => advance()}
+        />
       </Form.Item>
       <div
         onClick={onClickButton}

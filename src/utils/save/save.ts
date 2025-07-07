@@ -12,12 +12,6 @@ export const commonSave = async (state: State) => {
     return;
   }
 
-  console.log("Voici le form au save: ", state.formValues);
-  console.log(
-    "Voici la value à save: ",
-    state.formValues[state.stepConfig.fieldName]
-  );
-
   const values = state.formValues[state.stepConfig.fieldName];
 
   if (!values) {

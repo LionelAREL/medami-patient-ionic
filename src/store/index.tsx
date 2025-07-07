@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import { GetQuestionnaire } from "./../graphql/queries/questionnaire.graphql";
+import {
+  GetQuestionnaire,
+  GetQuestionnaireFromDevice,
+} from "./../graphql/queries/questionnaire.graphql";
 import { GetInstitutionDoctors } from "./../graphql/queries/institution.graphql";
 import {
   CreateSession,
@@ -20,10 +23,13 @@ import client from "../graphql/client";
 import {
   AuthPatientMutation,
   CompleteInterviewMutation,
+  CreateSessionMutationVariables,
   Doctor,
   GetDoctorQuery,
   GetNextStepQuery,
   GetPatientNameQuery,
+  GetQuestionnaireFromDeviceQuery,
+  GetQuestionnaireFromDeviceQueryVariables,
   Institution,
   InterviewFragment,
   QuestionnaireInterview,
@@ -41,6 +47,8 @@ import { commonSave } from "../utils/save/save";
 import { FormInstance } from "antd";
 import * as amplitudeAnalytics from "./../utils/analytics/amplitude";
 import * as Sentry from "@sentry/react";
+import { isPlatform } from "@ionic/react";
+import { Device } from "@capacitor/device";
 
 type ClientJWTToken = {
   sid: string;
@@ -90,7 +98,8 @@ export type CurrStep =
       doctors: Array<Doctor>;
       onPickDoctor: (doctor: Doctor) => void;
     }
-  | { __typename: "ThanksStep"; id: string };
+  | { __typename: "ThanksStep"; id: string }
+  | { __typename: "NetworkErrorStep"; id: string };
 
 export type State = {
   reset: (failure?: boolean) => void;
@@ -131,6 +140,8 @@ export type State = {
   form: FormInstance<any> | null;
   firstName: string | null;
   failureCount: number;
+  needSync: boolean;
+  networkError: boolean;
 };
 
 const initialState: StateValues = {
@@ -156,6 +167,8 @@ const initialState: StateValues = {
   form: null,
   firstName: null,
   failureCount: 0,
+  needSync: false,
+  networkError: false,
 };
 
 export const useQuestionnaireStore = create<State>((set, get) => ({
@@ -175,35 +188,84 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }
 
     amplitudeAnalytics.reset();
-    // amplitudeAnalytics.addUserProperties({
-    //   'sourceId': shortId,
-    //   'source': kIsWeb ? 'web' : 'tablet',
-    // });
-    // Sentry.setContext("source", {
-    //   sourceId: shortId,
-    //   source: kIsWeb ? "web" : "tablet",
-    // });
-    amplitudeAnalytics.log("Start");
+
+    const isWeb = !isPlatform("hybrid");
+    const shortId = isWeb
+      ? window.location.pathname.split("/")[1]
+      : (await Device.getId()).identifier;
+
+    amplitudeAnalytics.addUserProperties({
+      sourceId: shortId,
+      source: isWeb ? "web" : "tablet",
+    });
+    Sentry.setContext("source", {
+      sourceId: shortId,
+      source: isWeb ? "web" : "tablet",
+    });
 
     set(() => initialState);
 
-    const linkCode = window.location.pathname.split("/")[1];
-    set(() => ({ shortId: linkCode }));
+    set(() => ({ shortId }));
 
-    try {
-      const { data } = await client.query<GetQuestionnaireQuery>({
-        query: GetQuestionnaire,
-        variables: { linkCode },
-      });
-      set(() => ({
-        institution: data.workflowLinks?.[0]?.institution as Institution | null,
-      }));
-      get().startWorkflow(
-        data.workflowLinks?.[0]?.workflow.latest.firstStepId,
-        data.workflowLinks?.[0]?.doctors as Array<Doctor>
-      );
-    } catch {
-      get().startWorkflow(null, []);
+    if (isWeb) {
+      try {
+        const { data } = await client.query<GetQuestionnaireQuery>({
+          query: GetQuestionnaire,
+          variables: { linkCode: shortId },
+        });
+        set(() => ({
+          institution: data.workflowLinks?.[0]
+            ?.institution as Institution | null,
+        }));
+        get().startWorkflow(
+          data.workflowLinks?.[0]?.workflow.latest.firstStepId,
+          data.workflowLinks?.[0]?.doctors as Array<Doctor>
+        );
+      } catch (e) {
+        console.log(e);
+        get().startWorkflow(null, []);
+      }
+    } else if (isPlatform("android")) {
+      try {
+        const { data, errors } = await client.query<
+          GetQuestionnaireFromDeviceQuery,
+          GetQuestionnaireFromDeviceQueryVariables
+        >({
+          query: GetQuestionnaireFromDevice,
+          variables: { serial: shortId },
+        });
+
+        if (errors) {
+          set({ isReady: true });
+          set((state) => ({
+            currStep: { __typename: "NetworkErrorStep", id: "NETWORK_ERROR" },
+          }));
+          set((state) => ({
+            child: <Child state={state} />,
+          }));
+          amplitudeAnalytics.log("Network Error");
+        } else if (data.devices.length === 0) {
+          set({ isReady: true, needSync: true });
+        } else {
+          set(() => ({
+            institution: data.devices?.[0]?.institution as Institution | null,
+          }));
+          get().startWorkflow(
+            data.devices?.[0].workflow.latest.firstStepId,
+            data.devices?.[0].doctors as Array<Doctor>
+          );
+        }
+      } catch (e) {
+        console.log(e);
+        set({ isReady: true });
+        set((state) => ({
+          currStep: { __typename: "NetworkErrorStep", id: "NETWORK_ERROR" },
+        }));
+        set((state) => ({
+          child: <Child state={state} />,
+        }));
+        amplitudeAnalytics.log("Network Error");
+      }
     }
 
     if (!get().token) {
@@ -332,15 +394,17 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     const savedStep = get().currStep;
 
     if (!get().sessionId) {
-      const { data: createSessionData } =
-        await client.mutate<CreateSessionMutation>({
-          mutation: CreateSession,
-          variables: {
-            doctorId: get().doctor?.id,
-            isDeviceLink: false,
-            linkId: get().shortId,
-          },
-        });
+      const { data: createSessionData } = await client.mutate<
+        CreateSessionMutation,
+        CreateSessionMutationVariables
+      >({
+        mutation: CreateSession,
+        variables: {
+          doctorId: get().doctor?.id ?? "",
+          isDeviceLink: isPlatform("android"),
+          linkId: get().shortId ?? "",
+        },
+      });
       const token = createSessionData?.createSession;
       set(() => ({ token }));
 
@@ -508,8 +572,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
 
       set({ transitionDirection: "forward" });
 
-      // console.log("innerSteps")
-      // console.log(currSubStep, stepConfig?.innerSteps)
       if ((currSubStep ?? 0) < (stepConfig?.innerSteps ?? 0)) {
         await get().openInnerStep((currSubStep ?? 0) + 1);
       } else {
@@ -657,7 +719,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
     }));
 
     if (get().visitedSteps.length === 0) {
-      console.log("reset !!");
       get().reset();
       return;
     }
@@ -702,8 +763,6 @@ export const useQuestionnaireStore = create<State>((set, get) => ({
       (!(get()?.stepConfig?.isRequired ?? false) ||
         !!get().formValues[get().stepConfig!.fieldName]) &&
       isFormValid;
-    // console.log("canAdvance", get().formValues, get().stepConfig!.fieldName);
-    // console.log(canAdvance, isFormValid, get()?.form?.getFieldsError());
     return canAdvance;
   },
   setFormValues: (values) =>
